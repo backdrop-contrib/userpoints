@@ -464,6 +464,10 @@ function userpoints_theme() {
       'render element' => 'element',
       'file' => 'userpoints.theme.inc',
     ),
+    'userpoints_points' => array(
+      'variables' => array('points' => 0),
+      'file' => 'userpoints.theme.inc',
+    ),
   );
 }
 
@@ -487,11 +491,13 @@ function userpoints_tokens($type, $tokens, array $data = array(), array $options
     foreach ($tokens as $name => $original) {
       switch ($name) {
         case 'points':
-          $replacements[$original] = userpoints_get_current_points($user->uid);
+          $points = userpoints_get_current_points($user->uid);
+          $replacements[$original] = theme('userpoints_points', array('points' => $points));
           break;
 
         case 'maxpoints':
-          $replacements[$original] = userpoints_get_max_points($user->uid);
+          $points = userpoints_get_max_points($user->uid);
+          $replacements[$original] = theme('userpoints_points', array('points' => $points));
 
         default:
           break;
@@ -517,7 +523,8 @@ function userpoints_tokens($type, $tokens, array $data = array(), array $options
         list(, $tid) = explode('-', $name);
       }
       if ($tid) {
-        $replacements[$original] = userpoints_get_current_points($data['user']->uid, $tid);
+        $points = userpoints_get_current_points($data['user']->uid, $tid);
+        $replacements[$original] = theme('userpoints_points', array('points' => $points));
       }
     }
   }
@@ -534,7 +541,8 @@ function userpoints_tokens($type, $tokens, array $data = array(), array $options
         list(, $tid) = explode('-', $name);
       }
       if ($tid) {
-        $replacements[$original] = userpoints_get_max_points($uid, $tid);
+        $points = userpoints_get_max_points($uid, $tid);
+        $replacements[$original] = theme('userpoints_points', array('points' => $points));
       }
     }
   }
@@ -854,6 +862,7 @@ function userpoints_get_points_list($account = NULL) {
     foreach ($tids as $tid) {
       // Which points are we displaying. Special case for uncategorized.
       $points = userpoints_get_current_points($account->uid, $tid == 'uncategorized' ? 0 : $tid);
+      $points = theme('userpoints_points', array('points' => $points));
       if ($tid == 'all') {
         $total = t('Total (all categories): @points', userpoints_translation() + array('@points' => $points));
       }
@@ -1378,7 +1387,8 @@ function userpoints_get_list_row($data) {
   if (count($categories) > 1) {
     $row[] = array('data' => isset($categories[$data->tid]) ? $categories[$data->tid] : $categories[0], 'align' => 'right');
   }
-  $row[] = array('data' => $data->points, 'align' => 'right');
+  $points = theme('userpoints_points', array('points' => $data->points));
+  $row[] = array('data' => $points, 'align' => 'right');
   return $row;
 }
 

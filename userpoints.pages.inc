@@ -105,6 +105,8 @@ function userpoints_list_transactions($form, &$form_state, $account = NULL, $tid
     ->execute()
     ->fetchField();
 
+  $approved = userpoints_get_current_points($account->uid, isset($values['tid']) ? $values['tid'] : 'all');
+
   // Display both pending and approved points in a simple table.
   $output['list']['summary_table'] = array(
     '#theme' => 'table',
@@ -116,11 +118,11 @@ function userpoints_list_transactions($form, &$form_state, $account = NULL, $tid
     ),
     '#rows' => array(
       array(
-        'data' => array(t('Approved !points', userpoints_translation()), userpoints_get_current_points($account->uid, isset($values['tid']) ? $values['tid'] : 'all')),
+        'data' => array(t('Approved !points', userpoints_translation()), theme('userpoints_points', array('points'=>$approved))),
         'class' => array('userpoints-myuserpoints-total-approved'),
       ),
       array(
-        'data' => array(t('Pending !points', userpoints_translation()), $pending),
+        'data' => array(t('Pending !points', userpoints_translation()), theme('userpoints_points', array('points'=>$pending))),
         'class' => array('userpoints-myuserpoints-total-pending'),
       ),
     ),

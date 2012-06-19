@@ -40,3 +40,10 @@ function theme_userpoints_view_item($variables) {
 
   return $output;
 }
+
+/**
+ * Theme implementation to display userpoints points.
+ */
+function theme_userpoints_points($variables) {
+  return $variables['points'];
+}

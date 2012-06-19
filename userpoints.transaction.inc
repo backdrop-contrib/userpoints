@@ -895,42 +895,46 @@ class UserpointsTransaction extends Entity {
     }
     // Prepare arguments. They are the same for all string combinations.
     $categories = userpoints_get_categories();
+    $total_points = userpoints_get_current_points($this->getUid(), $this->getTid());
     $arguments = array_merge(userpoints_translation(), array(
       '!username' => theme('username', array('account' => $this->getUser())),
-      '%total' => userpoints_get_current_points($this->getUid(), $this->getTid()),
+      '%total' => theme('userpoints_points', array('points' => $total_points)),
       '%category' => $this->getCategory(),
     ));
 
     $view_own_points = user_access('view own userpoints') || user_access('view userpoints') || user_access('administer userpoints');
     $view_all_points = user_access('view userpoints') || user_access('administer userpoints');
 
+    $points = theme('userpoints_points', array('points' => $this->getPoints()));
+    $absolute_points = theme('userpoints_points', array('points' => $this->getPoints()));
+
     $message = NULL;
     if ($this->isDeclined()) {
       // Points have been declined.
       if ($this->getUid() == $user->uid && $view_own_points) {
-        $message = format_plural($this->getPoints(), 'You did not receive approval for @count !point in the %category category.', 'You did not receive approval for @count !points in the %category category.', $arguments);
+        $message = format_plural($points, 'You did not receive approval for @count !point in the %category category.', 'You did not receive approval for @count !points in the %category category.', $arguments);
       }
       elseif ($view_all_points) {
-        $message = format_plural($this->getPoints(), '!username did not receive approval for @count !point in the %category category.', '!username did not receive approval for @count !points in the %category category.', $arguments);
+        $message = format_plural($points, '!username did not receive approval for @count !point in the %category category.', '!username did not receive approval for @count !points in the %category category.', $arguments);
       }
     }
     elseif ($this->getPoints() < 0) {
       if ($this->isPending()) {
         if ($this->getUid() == $user->uid && $view_own_points) {
           // Directly address the user if he is loosing points.
-          $message = format_plural(abs($this->getPoints()), 'You just had a !point deducted, pending administrator approval.', 'You just had @count !points deducted, pending administrator approval.', $arguments);
+          $message = format_plural($absolute_points, 'You just had a !point deducted, pending administrator approval.', 'You just had @count !points deducted, pending administrator approval.', $arguments);
         }
         elseif ($view_all_points) {
           // Only display message about other users if user has permission to view userpoints.
-          $message = format_plural(abs($this->getPoints()), '!username just had a !point deducted, pending administrator approval.', '!username just had @count !points deducted, pending administrator approval.', $arguments);
+          $message = format_plural($absolute_points, '!username just had a !point deducted, pending administrator approval.', '!username just had @count !points deducted, pending administrator approval.', $arguments);
         }
       }
       else {
         if ($this->getUid() == $user->uid && $view_own_points) {
-          $message = format_plural(abs($this->getPoints()), 'You just had a !point deducted and now have %total !points in the %category category.', 'You just had @count !points deducted and now have %total !points in the %category category.', $arguments);
+          $message = format_plural($absolute_points, 'You just had a !point deducted and now have %total !points in the %category category.', 'You just had @count !points deducted and now have %total !points in the %category category.', $arguments);
         }
         elseif ($view_all_points) {
-          $message = format_plural(abs($this->getPoints()), '!username just had a !point deducted and now has %total !points in the %category category.', '!username just had @count !points deducted and now has %total !points in the %category category.', $arguments);
+          $message = format_plural($absolute_points, '!username just had a !point deducted and now has %total !points in the %category category.', '!username just had @count !points deducted and now has %total !points in the %category category.', $arguments);
         }
       }
     }
@@ -938,19 +942,19 @@ class UserpointsTransaction extends Entity {
       if ($this->isPending()) {
         if ($this->getUid() == $user->uid && $view_own_points) {
           // Directly address the user if he is loosing points.
-          $message = format_plural(abs($this->getPoints()), 'You just earned a !point, pending administrator approval.', 'You just earned @count !points, pending administrator approval.', $arguments);
+          $message = format_plural($absolute_points, 'You just earned a !point, pending administrator approval.', 'You just earned @count !points, pending administrator approval.', $arguments);
         }
         elseif ($view_all_points) {
           // Only display message about other users if user has permission to view userpoints.
-          $message = format_plural(abs($this->getPoints()), '!username just earned a !point, pending administrator approval.', '!username just earned @count !points, pending administrator approval.', $arguments);
+          $message = format_plural($absolute_points, '!username just earned a !point, pending administrator approval.', '!username just earned @count !points, pending administrator approval.', $arguments);
         }
       }
       else {
         if ($this->getUid() == $user->uid && $view_own_points) {
-          $message = format_plural(abs($this->getPoints()), 'You just earned a !point and now have %total !points in the %category category.', 'You just earned @count !points and now have %total !points in the %category category.', $arguments);
+          $message = format_plural($absolute_points, 'You just earned a !point and now have %total !points in the %category category.', 'You just earned @count !points and now have %total !points in the %category category.', $arguments);
         }
         elseif ($view_all_points) {
-          $message = format_plural(abs($this->getPoints()), '!username just earned a !point and now has %total !points in the %category category.', '!username just earned @count !points and now has %total !points in the %category category.', $arguments);
+          $message = format_plural($absolute_points, '!username just earned a !point and now has %total !points in the %category category.', '!username just earned @count !points and now has %total !points in the %category category.', $arguments);
         }
       }
     }
@@ -1111,7 +1115,7 @@ class UserpointsTransaction extends Entity {
       );
     }
     $row['data'][] = array(
-      'data' => $this->getPoints(),
+      'data' => theme('userpoints_points', array('points' => $this->getPoints())),
       'class' => array('userpoints-transactions-field-points', 'userpoints-transaction-points-' . ($this->getPoints() > 0 ? 'positive' : 'negative')),
     );
 
