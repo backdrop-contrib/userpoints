@@ -1304,6 +1304,7 @@ class UserpointsTransactionMetadataController extends EntityDefaultMetadataContr
       'description' => t('The user that will receive the !points', userpoints_translation()),
       'setter callback' => 'userpoints_transaction_property_set',
       'getter callback' => 'userpoints_transaction_property_get',
+      'schema field' => 'uid'
     );
     $properties['points']['label'] = t('!Points', userpoints_translation());
     $properties['points']['description'] = t('Amount of !points to give or take.', userpoints_translation());
