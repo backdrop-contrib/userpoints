@@ -63,7 +63,7 @@ class UserpointsRulesTestCase extends DrupalWebTestCase {
 
     $this->createEventRules();
 
-    $transaction = userpoints_grant_points('userpoints_rules_trigger_before_rule', 10, $user->uid);
+    $transaction = userpoints_grant_points('userpoints_rules_trigger_before_rule', 10, 'userpoints', $user->uid);
     $transaction->save();
 
     // Verify that the changes defined in the rules have been done.
@@ -75,7 +75,7 @@ class UserpointsRulesTestCase extends DrupalWebTestCase {
     $this->assertTrue($transaction->isDeclined(), t('Transaction has been marked as declined.'));
     $this->assertEqual('Transaction was declined through rules.', $transaction->getDescription(), t('Transaction description has been set.'));
 
-    $transaction = userpoints_grant_points('userpoints_rules_trigger_after_rule', 15, $user->uid)
+    $transaction = userpoints_grant_points('userpoints_rules_trigger_after_rule', 15, 'userpoints', $user->uid)
       ->pending();
     $transaction->save();
 
@@ -89,7 +89,7 @@ class UserpointsRulesTestCase extends DrupalWebTestCase {
    * Set up the rules required for the tests.
    */
   protected function createEventRules() {
-        $before_rule = '{ "rules_userpoints_transaction_before_test_rule" : {
+    $before_rule = '{ "rules_userpoints_transaction_before_test_rule" : {
         "LABEL" : "Userpoints Transaction Before Test rule",
         "PLUGIN" : "reaction rule",
         "REQUIRES" : [ "rules", "userpoints_rules" ],
@@ -153,6 +153,7 @@ class UserpointsRulesTestCase extends DrupalWebTestCase {
         "ON" : [ "user_login" ],
         "DO" : [
           { "userpoints_action_grant_points" : {
+              "type" : "userpoints",
               "user" : [ "account" ],
               "points" : "10",
               "tid" : "0",

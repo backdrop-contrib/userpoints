@@ -32,6 +32,8 @@ class UserpointsTransaction extends Entity {
    */
   public $txn_id = NULL;
 
+  public $type;
+
   public $uid = 0;
 
   public $points;
@@ -465,7 +467,9 @@ class UserpointsTransaction extends Entity {
    */
   function getEntity() {
     if (!empty($this->entity_id) && !empty($this->entity_type) && entity_get_info($this->entity_type)) {
-      return array_shift(entity_load($this->entity_type, array($this->entity_id)));
+      // Create an array because array_shift passes in by reference.
+      $entities = entity_load($this->entity_type, array($this->entity_id));
+      return array_shift($entities);
     }
   }
 
@@ -1309,6 +1313,12 @@ class UserpointsTransactionMetadataController extends EntityDefaultMetadataContr
     $properties['points']['label'] = t('!Points', userpoints_translation());
     $properties['points']['description'] = t('Amount of !points to give or take.', userpoints_translation());
 
+    $properties['type'] = array(
+      'label' => t('!Points transaction type', userpoints_translation()),
+      'description' => t('The bundle entity for !points transactions.', userpoints_translation()),
+      'type' => 'userpoints_transaction_type',
+    );
+
     $properties['points_abs'] = array(
       'label' => t('!Points absolute', userpoints_translation()),
       'description' => t('The absolute (positive) amount of !points of this transaction.', userpoints_translation()),
@@ -1430,4 +1440,149 @@ class UserpointsTransactionMetadataController extends EntityDefaultMetadataContr
 
     return $info;
   }
+}
+
+/**
+ * Transaction type.
+ *
+ * @ingroup userpoints_api
+ */
+class UserpointsTransactionType extends Entity {
+
+  /**
+   * Label of the transaction type.
+   *
+   * @var string
+   */
+  public $label;
+
+  /**
+   * Machine name of the transaction type.
+   *
+   * @var string
+   */
+  public $name;
+
+  function __construct($values = array()) {
+    parent::__construct($values, 'userpoints_transaction_type');
+  }
+
+}
+
+/**
+ * Transaction type UI.
+ *
+ * @ingroup userpoints_api
+ */
+class UserpointsTransactionTypeUIController extends EntityDefaultUIController {
+
+  /**
+   * Implements EntityDefaultUIController::hook_menu().
+   *
+   * Make transaction type UI fit into userpoints menu structure.
+   */
+  public function hook_menu() {
+    $items = parent::hook_menu();
+    $items[$this->path]['title'] = 'Transaction Types';
+    $items[$this->path]['description'] = strtr('Manage !Points transaction types.', userpoints_translation());
+    $items[$this->path]['type'] = MENU_LOCAL_TASK;
+    $items[$this->path]['weight'] = 10;
+
+    foreach ($items as $path => $item) {
+      if (substr($path, strlen($this->path) + 1, 6) == 'manage') {
+        // Field UI doesn't render local tasks well when the main ui is a local
+        // task itself. This places all admin interfaces directly under types
+        // instead.
+        $new_path = preg_replace('/\/manage/', '', $path);
+        $items[$new_path] = $items[$path];
+        $items[$new_path]['page arguments'][1] = 5;
+
+        if (isset($items[$new_path]['page arguments'][0]) &&
+            $items[$new_path]['page arguments'][0] == 'userpoints_transaction_type_operation_form') {
+          // Entity API fails to use the correct bundle argument defined in
+          // entity info.
+          $items[$new_path]['page arguments'] = array('entity_ui_operation_form', 'userpoints_transaction_type', 5, 6);
+        }
+
+        unset($items[$path]);
+      }
+    }
+    return $items;
+  }
+
+  /**
+   * Implements EntityDefaultUIController::overviewTableRow().
+   *
+   * This is pretty much a straight rip from Entity API except the links are
+   * generated without 'manage' in the path.
+   */
+  protected function overviewTableRow($conditions, $id, $entity, $additional_cols = array()) {
+    $entity_uri = entity_uri($this->entityType, $entity);
+
+    $row[] = array(
+      'data' => array(
+        '#theme' => 'entity_ui_overview_item',
+        '#label' => entity_label($this->entityType, $entity),
+        '#name' => !empty($this->entityInfo['exportable']) ? entity_id($this->entityType, $entity) : FALSE,
+        '#url' => $entity_uri ? $entity_uri : FALSE,
+        '#entity_type' => $this->entityType,
+      ),
+    );
+
+    // Add in any passed additional cols.
+    foreach ($additional_cols as $col) {
+      $row[] = $col;
+    }
+
+    // Add a row for the exportable status.
+    if (!empty($this->entityInfo['exportable'])) {
+      $row[] = array('data' => array(
+          '#theme' => 'entity_status',
+          '#status' => $entity->{$this->statusKey},
+        ));
+    }
+    // In case this is a bundle, we add links to the field ui tabs.
+    $field_ui = !empty($this->entityInfo['bundle of']) && entity_type_is_fieldable($this->entityInfo['bundle of']) && module_exists('field_ui');
+    // For exportable entities we add an export link.
+    $exportable = !empty($this->entityInfo['exportable']);
+    // If i18n integration is enabled, add a link to the translate tab.
+    $i18n = !empty($this->entityInfo['i18n controller class']);
+
+    // Add operations depending on the status.
+    if (entity_has_status($this->entityType, $entity, ENTITY_FIXED)) {
+      $row[] = array(
+        'data' => l(t('clone'), $this->path . '/' . $id . '/clone'),
+        'colspan' => $this->operationCount(),
+      );
+    }
+    else {
+      $row[] = l(t('edit'), $this->path . '/' . $id);
+
+      if ($field_ui) {
+        $row[] = l(t('manage fields'), $this->path . '/' . $id . '/fields');
+        $row[] = l(t('manage display'), $this->path . '/' . $id . '/display');
+      }
+      if ($i18n) {
+        $row[] = l(t('translate'), $this->path . '/' . $id . '/translate');
+      }
+      if ($exportable) {
+        $row[] = l(t('clone'), $this->path . '/' . $id . '/clone');
+      }
+
+      if (empty($this->entityInfo['exportable']) || !entity_has_status($this->entityType, $entity, ENTITY_IN_CODE)) {
+        $row[] = l(t('delete'), $this->path . '/' . $id . '/delete', array('query' => drupal_get_destination()));
+      }
+      elseif (entity_has_status($this->entityType, $entity, ENTITY_OVERRIDDEN)) {
+        $row[] = l(t('revert'), $this->path . '/' . $id . '/revert', array('query' => drupal_get_destination()));
+      }
+      else {
+        $row[] = '';
+      }
+    }
+    if ($exportable) {
+      $row[] = l(t('export'), $this->path . '/' . $id . '/export');
+    }
+    return $row;
+  }
+
 }

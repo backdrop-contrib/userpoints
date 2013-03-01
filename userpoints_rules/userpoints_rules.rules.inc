@@ -14,6 +14,11 @@ function userpoints_rules_rules_action_info() {
       'label' => t('Grant !points to a user', userpoints_translation()),
       'named parameter' => TRUE,
       'parameter' => array(
+        'type' => array(
+          'type' => 'userpoints_transaction_type',
+          'label' => t('Userpoints Transaction Type'),
+          'description' => t('Please choose the userpoints transaction type.'),
+        ),
         'user' => array(
           'type' => 'user',
           'label' => t('User'),
@@ -155,7 +160,7 @@ function userpoints_action_grant_points($params) {
   $state = $params['state'];
   $entity = $state->currentArguments['entity'];
 
-  $transaction = userpoints_grant_points($params['operation'], $params['points'])
+  $transaction = userpoints_grant_points($params['operation'], $params['points'], $params['type']->name)
     // User id might be a int or a EntityValueWrapper.
     ->setUid(is_object($params['user']->uid) ? $params['user']->getIdentifier() : $params['user']->uid)
     ->setTid($params['tid'])

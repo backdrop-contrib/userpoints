@@ -158,7 +158,6 @@ function userpoints_menu() {
       'type' => MENU_LOCAL_TASK,
       'weight' => 0,
   );
-
   $items['admin/config/people/userpoints/moderate'] = array(
       'title' => 'Moderation',
       'title arguments' => userpoints_translation(),
@@ -176,12 +175,11 @@ function userpoints_menu() {
       'title arguments' => userpoints_translation(),
       'description' => 'Admin add/delete userpoints',
       'page callback' => 'drupal_get_form',
-      'page arguments' => array('userpoints_admin_txn', 4),
+      'page arguments' => array('userpoints_admin_txn', 4, 5),
       'access callback' => 'userpoints_admin_access',
       'access arguments' => array('add'),
       'file' => 'userpoints.admin.inc',
       'type' => MENU_LOCAL_ACTION,
-      'weight' => 0,
   );
 
   $items['admin/config/people/userpoints/settings'] = array(
@@ -322,7 +320,7 @@ function userpoints_menu_local_tasks_alter(&$data, $router_item, $root_path) {
 
     // Don't display the action link on some pages like settings and
     // approve or decline confirmation forms.
-    $blacklist = array('settings', 'approve', 'decline', 'add', 'edit');
+    $blacklist = array('settings', 'approve', 'decline', 'add', 'edit', 'types');
     foreach ($blacklist as $blacklisted_path) {
       if (strpos($root_path, $blacklisted_path) !== FALSE) {
         return;
@@ -657,20 +655,20 @@ function userpoints_get_current_points($uid = NULL, $tid = NULL) {
 function userpoints_get_max_points($uid = NULL, $tid = NULL) {
   $max = drupal_static(__FUNCTION__, array());
 
-  // Check if uid is passed as a parameter.
+  // Checks if uid is passed as a parameter.
   if (!$uid) {
     // It is not, so we use the currently logged in user's uid.
     global $user;
     $uid = $user->uid;
   }
 
-  // Check if a term id is passed as a parameter.
+  // Checks if a term id is passed as a parameter.
   if (!isset($tid)) {
     // It is not, so get the default term id.
     $tid = userpoints_get_default_tid();
   }
 
-  // Check if we have already cached the maximum for the user/term combination on previous calls.
+  // Checks if we have already cached the maximum for the user/term combination on previous calls.
   if (!isset($max[$uid][$tid])) {
     // We did not cache it.
     if ($tid === 'all') {
@@ -689,8 +687,9 @@ function userpoints_get_max_points($uid = NULL, $tid = NULL) {
 /**
  * Grant a user points.
  *
- * The function excpects two required parameters, an operation string
- * and the amount of points. Optionally, a user id can be passed.
+ * The function expects three required parameters, an operation string, the
+ * amount of points, and the transaction bundle. Optionally, a user id may be
+ * passed.
  *
  * The function then returns a UserpointsTransaction object, which provides
  * methods to add further details to the transaction. New transactions are saved
@@ -700,11 +699,13 @@ function userpoints_get_max_points($uid = NULL, $tid = NULL) {
  * Basic usage examples:
  * @code
  * // Adding points to the current user, relying on automatic saving.
- * userpoints_grant_points('mymodule_type_action', $points);
+ * userpoints_grant_points('mymodule_type_action', $points,
+ *                         'my_userpoints_type');
  *
  * // Grant points to another, add a entity reference to a node and save
  * // explicitly.
- * userpoints_grant_points('mymodule_type_otheraction', $points, $account->uid)
+ * userpoints_grant_points('mymodule_type_otheraction', $points,
+ *                         'my_userpoints_type', $account->uid)
  *   ->setEntity('node', $node->nid)
  *   ->save();
  * @endcode
@@ -718,6 +719,9 @@ function userpoints_get_max_points($uid = NULL, $tid = NULL) {
  *   transaction listings. See hook_userpoints_info().
  * @param $points
  *   A positive or negative point amount that should be assigned to the user.
+ * @param $type
+ *   The userpoints transaction bundle to create. Optional, defaults to the
+ *   default bundle if it exists.
  * @param $uid
  *   UID of the user that should be granted points. Optional, defaults to the
  *   current user.
@@ -726,15 +730,26 @@ function userpoints_get_max_points($uid = NULL, $tid = NULL) {
  *
  * @ingroup userpoints_api
  */
-function userpoints_grant_points($operation, $points, $uid = NULL) {
+function userpoints_grant_points($operation, $points, $type = NULL, $uid = NULL) {
   global $user;
 
-  // Default to the current user if not set.
+  if (empty($type)) {
+    // Default to the default bundle if not set.
+    $type = variable_get('userpoints_default_bundle', 'userpoints');
+  }
+
   if (empty($uid)) {
+    // Default to the current user if not set.
     $uid = $user->uid;
   }
 
-  $transaction = new UserpointsTransaction();
+  try {
+    $transaction = new UserpointsTransaction(array('type' => $type));
+  }
+  catch (Exception $e) {
+    watchdog_exception('userpoints', $e, 'Unable to create !points transaction.', userpoints_translation());
+  }
+
   return $transaction->setOperation($operation)
     ->setPoints($points)
     ->setUid($uid);
@@ -984,7 +999,7 @@ function userpoints_filter_parse_input($form_state, $tid = NULL) {
  * Filter a query according to the selected filters.
  */
 function userpoints_filter_query(SelectQueryInterface $query, $values) {
-    // Check for filtering. isset() is used because 0 is a valid value
+    // Checks for filtering. isset() is used because 0 is a valid value
   // (Uncategorized).
   if (isset($values['tid']) && $values['tid'] != 'all') {
     // If a category is selected, limit both the default query and the query
@@ -1140,7 +1155,7 @@ function userpoints_expire_transactions() {
     ));
     $description = strtr(variable_get(USERPOINTS_EXPIRY_DESCRIPTION, NULL), $arguments);
 
-    userpoints_grant_points('expiry', -$transaction->points, $transaction->uid)
+    userpoints_grant_points('expiry', -$transaction->points, $transaction->type, $transaction->uid)
       ->setDescription($description)
       ->setParent($transaction->txn_id)
       ->setTid($transaction->tid)
@@ -1296,7 +1311,7 @@ function userpoints_userpoints_info() {
 }
 
 /**
- * Load a userpoints transaction.
+ * Loads a userpoints transaction.
  *
  * @param $txn_id
  *   Userpoints transaction Id.
@@ -1310,8 +1325,63 @@ function userpoints_transaction_load($txn_id, $reset = FALSE) {
   return $temp ? reset($temp) : FALSE;
 }
 
+/**
+ * Loads multiple userpoints transactions.
+ */
 function userpoints_transaction_load_multiple(array $txn_ids, $conditions = array(), $reset = FALSE) {
   return entity_load('userpoints_transaction', $txn_ids, $conditions, $reset);
+}
+
+/**
+ * Loads userpoints transaction type.
+ *
+ * @param $name
+ *   Userpoints transaction bundle name.
+ *
+ * @return UserpointsTransactionType
+ *   A userpoints transaction type entity.
+ */
+function userpoints_transaction_type_load($name) {
+  return userpoints_transaction_get_types($name);
+}
+
+/**
+ * Checks if the userpoints transaction type exists.
+ *
+ * @param $name
+ *   Userpoints transaction bundle name.
+ *
+ * @return bool
+ */
+function userpoints_transaction_type_exists($name) {
+  $type = userpoints_transaction_type_load($name);
+
+  if ($type) {
+    return TRUE;
+  }
+
+  return FALSE;
+}
+
+/**
+ * Loads userpoints transaction types.
+ *
+ * @param $name
+ *   An optional userpoints transaction bundle name.
+ *
+ * @return Mixed
+ *   An array of userpoints transaction types or a UserpointsTransactionType.
+ */
+function userpoints_transaction_get_types($name = NULL) {
+  $types = entity_load_multiple_by_name('userpoints_transaction_type', isset($name) ? array($name) : FALSE);
+  return isset($name) ? reset($types) : $types;
+}
+
+/**
+ * Access callback for administration access to transaction type ui.
+ */
+function userpoints_transaction_type_access($op, $type) {
+  return user_access('administer userpoints');
 }
 
 /**
@@ -1431,6 +1501,7 @@ function userpoints_transaction_get_points_absolute($userpoints_transaction, arr
 function userpoints_entity_info() {
   $return = array(
     'userpoints_transaction' => array(
+      'module' => 'userpoints',
       'label' => t('Userpoints Transaction'),
       'entity class' => 'UserpointsTransaction',
       'controller class' => 'UserpointsTransactionController',
@@ -1441,12 +1512,19 @@ function userpoints_entity_info() {
       'fieldable' => TRUE,
       'entity keys' => array(
         'id' => 'txn_id',
+        'bundle' => 'type',
+      ),
+      'bundle keys' => array(
+        'bundle' => 'name',
       ),
       'bundles' => array(
-        'userpoints_transaction' => array(
-          'label' => t('Default bundle'),
+        'userpoints' => array(
+          'label' => t('Default'),
           'admin' => array(
-            'path' => 'admin/config/people/userpoints',
+            'path' => 'admin/config/people/userpoints/types/%userpoints_transaction_type',
+            'real path' => 'admin/config/people/userpoints/types/userpoints',
+            'bundle argument' => 5,
+            'access callback' => 'userpoints_admin_access',
             'access arguments' => array('administer userpoints'),
           ),
         ),
@@ -1458,6 +1536,49 @@ function userpoints_entity_info() {
         ),
       ),
     ),
+    'userpoints_transaction_type' => array(
+      'module' => 'userpoints',
+      'label' => t('Userpoints Transaction Type'),
+      'entity class' => 'UserpointsTransactionType',
+      'controller class' => 'EntityAPIControllerExportable',
+      'base table' => 'userpoints_txn_type',
+      'entity keys' => array(
+        'id' => 'id',
+        'name' => 'name',
+        'label' => 'label',
+      ),
+      'fieldable' => FALSE,
+      'bundle of' => 'userpoints_transaction',
+      'access callback' => 'userpoints_transaction_type_access',
+      'exportable' => TRUE,
+      'admin ui' => array(
+        'path' => 'admin/config/people/userpoints/types',
+        'file' => 'userpoints.admin.inc',
+        'controller class' => 'UserpointsTransactionTypeUIController',
+      ),
+    ),
   );
   return $return;
+}
+
+/**
+ * Implements hook_entity_info_alter().
+ */
+function userpoints_entity_info_alter(&$info) {
+  $types = userpoints_transaction_get_types();
+
+  if (!empty($types)) {
+    foreach ($types as $name => $type) {
+      $info['userpoints_transaction']['bundles'][$name] = array(
+        'label' => check_plain($type->label),
+        'admin' => array(
+          'path' => 'admin/config/people/userpoints/types/%userpoints_transaction_type',
+          'real path' => 'admin/config/people/userpoints/types/' . $name,
+          'bundle argument' => 5,
+          'access callback' => 'userpoints_admin_access',
+          'access arguments' => array('administer userpoints'),
+        ),
+      );
+    }
+  }
 }

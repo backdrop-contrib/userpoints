@@ -101,6 +101,12 @@ function userpoints_schema() {
         'type' => 'serial',
         'not null' => TRUE,
       ),
+      'type' => array(
+        'description' => 'Bundle',
+        'type' => 'varchar',
+        'length' => 100,
+        'not null' => TRUE,
+      ),
       'uid' => array(
         'description' => 'User ID',
         'type' => 'int',
@@ -202,7 +208,71 @@ function userpoints_schema() {
       'points' => array('points'),
     )
   );
+
+  $schema['userpoints_txn_type'] = array(
+    'description' => 'Userpoints transaction type',
+    'fields' => array(
+      'id' => array(
+        'description' => 'Transaction type id',
+        'type' => 'serial',
+        'not null' => TRUE,
+      ),
+      'name' => array(
+        'description' => 'Machine name',
+        'type' => 'varchar',
+        'length' => 100,
+        'not null' => TRUE,
+      ),
+      'label' => array(
+        'description' => 'Human-readable name',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+      ),
+      'status' => array(
+        'description' => 'Type status used by Entity API',
+        'type' => 'int',
+        'size' => 'tiny',
+        'not null' => TRUE,
+        'default' => 0x01,
+      ),
+      'module' => array(
+        'description' => 'Module owner of type used by Entity API',
+        'type' => 'varchar',
+        'length' => 100,
+        'not null' => FALSE,
+      ),
+    ),
+    'primary key' => array('id'),
+    'unique keys' => array(
+      'name' => array('name'),
+    ),
+  );
+
   return $schema;
+}
+
+/**
+ * Implements hook_install().
+ */
+function userpoints_install() {
+  // Create the default userpoints bundle that is defined in
+  // userpoints_entity_info().
+  $bundle_info = array(
+    'name' => 'userpoints',
+    'label' => st('Default'),
+    'status' => 0x01,
+    'module' => 'userpoints',
+  );
+
+  try {
+    $bundle = new UserpointsTransactionType($bundle_info);
+    $bundle->save();
+    variable_set('userpoints_default_bundle', 'userpoints');
+  }
+  catch (Exception $e) {
+    watchdog_exception('userpoints', $e, 'Failed to create default bundle.', array(), WATCHDOG_CRITICAL);
+  }
 }
 
 /**
@@ -217,6 +287,8 @@ function userpoints_uninstall() {
   if ($vid && function_exists('taxonomy_vocabulary_delete')) {
     taxonomy_vocabulary_delete($vid);
   }
+
+  variable_del('userpoints_default_bundle', 'userpoints');
 }
 
 /**
@@ -331,4 +403,73 @@ function userpoints_update_7004(&$sandbox) {
   $sandbox['current_uid'] = $last_uid;
   // Set #finished based on sandbox.
   $sandbox['#finished'] = (empty($sandbox['max']) || $last_uid == 0) ? 1 : ($sandbox['current_uid'] / $sandbox['max']);
+}
+
+/**
+ * Add userpoints transaction type table, and default bundle.
+ */
+function userpoints_update_7200() {
+
+  // Add transaction type table from schema.
+  $txn_type_schema = array(
+    'description' => 'Userpoints transaction type',
+    'fields' => array(
+      'id' => array(
+        'description' => 'Transaction type id',
+        'type' => 'serial',
+        'not null' => TRUE,
+      ),
+      'name' => array(
+        'description' => 'Machine name',
+        'type' => 'varchar',
+        'length' => 100,
+        'not null' => TRUE,
+      ),
+      'label' => array(
+        'description' => 'Human-readable name',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+      ),
+      'status' => array(
+        'description' => 'Type status used by Entity API',
+        'type' => 'int',
+        'size' => 'tiny',
+        'not null' => TRUE,
+        'default' => 0x01,
+      ),
+      'module' => array(
+        'description' => 'Module owner of type used by Entity API',
+        'type' => 'varchar',
+        'length' => 100,
+        'not null' => FALSE,
+      ),
+    ),
+    'primary key' => array('id'),
+    'unique keys' => array(
+      'name' => array('name'),
+    ),
+  );
+
+  db_create_table('userpoints_txn_type', $txn_type_schema);
+
+  // Create the default userpoints bundle.
+  $insert = db_insert('userpoints_txn_type')->fields(array(
+    'name' => 'userpoints',
+    'label' => st('Default'),
+    'status' => 0x01,
+    'module' => 'userpoints',
+  ));
+  $insert->execute();
+  variable_set('userpoints_default_bundle', 'userpoints');
+
+  // Add bundle column to transaction table.
+  $type_field = array(
+    'description' => 'Bundle',
+    'type' => 'varchar',
+    'length' => 100,
+    'not null' => TRUE,
+    'initial' => 'userpoints',
+  );
+  db_add_field('userpoints_txn', 'type', $type_field);
 }

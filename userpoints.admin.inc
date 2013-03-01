@@ -17,6 +17,13 @@ function userpoints_confirm_approve_submit($form, &$form_state) {
 
 /**
  * Form builder for add/edit userpoints transaction form.
+ *
+ * @param $form
+ * @param &$form_state
+ * @param $mode
+ *   The operation performed: edit or add.
+ * @param $txn
+ *   Either the transaction entity, user entity, or null.
  */
 function userpoints_admin_txn($form, &$form_state, $mode, $txn = NULL) {
 
@@ -31,11 +38,54 @@ function userpoints_admin_txn($form, &$form_state, $mode, $txn = NULL) {
   }
   elseif ($mode == 'add') {
     drupal_set_title(t('Add !points', userpoints_translation()));
-    if ($txn) {
+    if (isset($txn)) {
+      // Load a user account to use for the transaction user.
       $txn_user = user_load($txn);
     }
-    $txn = new UserpointsTransaction();
+
+    if (!isset($form_state['userpoints_transaction'])) {
+      // Create a transaction entity for a single transaction type, or allow
+      // the user to choose the transaction type.
+      $types = userpoints_transaction_get_types();
+
+      if (count($types) == 1) {
+        $transaction_type = array_shift($types);
+
+        $txn = new UserpointsTransaction(array('type' => $transaction_type->name));
+      }
+      elseif (empty($types)) {
+        // No transaction types.
+        throw new Exception(t('There are no !points transaction types available.', userpoints_translation()));
+      }
+      else {
+        // Provide a selection of types and return the form.
+        $type_options = array();
+        foreach ($types as $type) {
+          $type_options[$type->name] = check_plain($type->label);
+        }
+
+        $form['userpoints_transaction_type'] = array(
+          '#type' => 'select',
+          '#title' => t('!Points Transaction Type', userpoints_translation()),
+          '#required' => TRUE,
+          '#options' => $type_options,
+        );
+
+        $form['actions'] = array('#type' => 'actions');
+        $form['actions']['submit'] = array(
+          '#type' => 'submit',
+          '#value' => t('Next'),
+          '#submit' => array('userpoints_admin_txn_type_submit'),
+        );
+
+        return $form;
+      }
+    }
+    else {
+      $txn = $form_state['userpoints_transaction'];
+    }
   }
+
   $form_state['userpoints_transaction'] = $txn;
 
   // If this transaction is read only, disable all fields.
@@ -259,6 +309,16 @@ function userpoints_admin_txn($form, &$form_state, $mode, $txn = NULL) {
       '#disabled' => $disable,
   );
 
+  if ($mode == 'add') {
+    $form['actions']['back'] = array(
+      '#type' => 'submit',
+      '#value' => t('Back'),
+      '#submit' => array('userpoints_admin_txn_back_submit'),
+      '#limit_validation_errors' => array(),
+    );
+  }
+
+  // @todo Should fields also be disabled if read-only?
   field_attach_form('userpoints_transaction', $txn, $form, $form_state);
   return $form;
 }
@@ -312,6 +372,10 @@ function userpoints_create_operation_autocomplete_label($operation, $info, $sear
  * Validate function for userpoints transaction form.
  */
 function userpoints_admin_txn_validate($form, &$form_state) {
+  if (in_array($form_state['clicked_button']['#value'], array(t('Next'), t('Back')))) {
+    return;
+  }
+
   $txn_user = user_load_by_name($form_state['values']['txn_user']);
   if (!is_object($txn_user)) {
     form_set_error('txn_user', t('Specified user does not exist.'));
@@ -329,6 +393,29 @@ function userpoints_admin_txn_validate($form, &$form_state) {
   }
 
   field_attach_form_validate('userpoints_transaction', $form_state['userpoints_transaction'], $form, $form_state);
+}
+
+/**
+ * Submit function for userpoints transaction form, Step 1.
+ */
+function userpoints_admin_txn_type_submit($form, &$form_state) {
+  $form_state['rebuild'] = TRUE;
+
+  try {
+    $form_state['userpoints_transaction'] = new UserpointsTransaction(array('type' => $form_state['values']['userpoints_transaction_type']));
+  }
+  catch (Exception $e) {
+    watchdog_exception('userpoints', $e, 'Could not create !points transaction.', userpoints_translation());
+  }
+}
+
+/**
+ * Back submit function for userpoints transaciton form
+ */
+function userpoints_admin_txn_back_submit($form, &$form_state) {
+  $form_state['rebuild'] = TRUE;
+
+  unset($form_state['userpoints_transaction']);
 }
 
 /**
@@ -381,12 +468,17 @@ function userpoints_admin_txn_submit($form, &$form_state) {
   }
 
   // Attach field information directly to the userpoints transaction object.
-  foreach (field_info_instances('userpoints_transaction', 'userpoints_transaction') as $instance) {
+  foreach (field_info_instances('userpoints_transaction', $transaction->type) as $instance) {
     $field_name = $instance['field_name'];
     $transaction->$field_name = $form_state['values'][$field_name];
   }
 
   field_attach_submit('userpoints_transaction', $transaction, $form, $form_state);
+
+  if (!isset($form_state['values']['tid'])) {
+    // Set default tid if taxonomy is disabled.
+    $form_state['values']['tid'] = userpoints_get_default_tid();
+  }
 
   // Set common properties and save the transaction.
   $transaction
@@ -834,4 +926,93 @@ function userpoints_admin_settings($form, &$form_state) {
   }
 
   return system_settings_form($form);
+}
+
+/**
+ * Userpoints transaction type form.
+ *
+ * @param $form
+ *   The form array.
+ * @param &$form_state
+ *   The reference to the form state array.
+ * @param $type
+ *   The userpoints transaction type entity if it exists.
+ * @param $op
+ *   The operation to perform: add, edit, or clone.
+ *
+ * @return Array
+ *   An associative array based on the form API.
+ */
+function userpoints_transaction_type_form($form, &$form_state, $type, $op = 'edit') {
+  // @todo There is a bug in Entity API that turns id and name properties into bool.
+
+  if ($op == 'clone') {
+    // Prepare a clone of the transaction type entity.
+    $type->name .= '_clone';
+    $type->label .= ' (Clone)';
+  }
+
+  $form['label'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Label'),
+    '#description' => t('Provide a label for the transaction type.'),
+    '#max_length' => 255,
+    '#required' => TRUE,
+    '#default_value' => isset($type) ? check_plain($type->label) : '',
+  );
+
+  $form['name'] = array(
+    '#type' => 'machine_name',
+    '#machine_name' => array(
+      'exists' => 'userpoints_transaction_type_exists',
+      'source' => array('label'),
+    ),
+    '#max_length' => 100,
+    '#required' => TRUE,
+    '#default_value' => isset($type) ? check_plain($type->name) : '',
+  );
+
+  $form['actions'] = array('#type' => 'actions');
+  $form['actions']['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Save'),
+    '#weight' => 42,
+  );
+
+  if (isset($type->id)) {
+    $form_state['userpoints_transaction_type'] = $type;
+
+    $form['actions']['delete'] = array(
+      '#type' => 'submit',
+      '#value' => t('Delete'),
+      '#submit' => array('userpoints_transaction_type_form_delete'),
+      '#weight' => 43,
+    );
+  }
+
+  return $form;
+}
+
+/**
+ * Userpoints transaction type form delete.
+ */
+function userpoints_transaction_type_form_delete($form, &$form_state) {
+  $form_state['redirect'] = array('admin/config/people/userpoints/types/' . $form_state['userpoints_transaction_type']->name . '/delete');
+}
+
+/**
+ * Userpoints transaction type form submit.
+ */
+function userpoints_transaction_type_form_submit($form, &$form_state) {
+  $type = entity_ui_form_submit_build_entity($form, $form_state);
+
+  try {
+    $type->save();
+  }
+  catch (Exception $e) {
+    watchdog_exception('userpoints', $e);
+  }
+
+  drupal_set_message(t('Successfully saved transaction type %label', array('%label' => $type->label)));
+  $form_state['redirect'] = array('admin/config/people/userpoints/types');
 }
