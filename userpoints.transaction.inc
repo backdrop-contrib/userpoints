@@ -107,12 +107,12 @@ class UserpointsTransaction extends Entity {
    * @param $txn_id
    *   Transaction id if an existing transaction should be loaded.
    */
-  function __construct($values = array()) {
+  function __construct(array $values) {
     parent::__construct($values, 'userpoints_transaction');
 
     // Apply default status.
     if ($this->status === NULL) {
-      $this->status = variable_get('userpoints_points_moderation', UserpointsTransaction::STATUS_APPROVED);
+      $this->status = config_get('userpoints.settings', 'userpoints_points_moderation');
     }
     else {
       $this->orig_status = $this->getStatus();
@@ -285,7 +285,7 @@ class UserpointsTransaction extends Entity {
     $this->checkChange();
 
     if ($expirydate > 0 || $expirydate === 0 || $expirydate === NULL) {
-      $this->expirydate = (int)$expirydate;
+      $this->expirydate = (int) $expirydate;
     }
     else {
       $this->abort();
@@ -339,7 +339,7 @@ class UserpointsTransaction extends Entity {
    */
   function setApproverUid($uid) {
     $this->checkChange();
-    $this->approver_uid = (int)$uid;
+    $this->approver_uid = (int) $uid;
     return $this;
   }
 
@@ -380,7 +380,7 @@ class UserpointsTransaction extends Entity {
   function setTimestamp($time_stamp) {
     $this->checkChange(TRUE);
 
-    if (variable_get('userpoints_transaction_timestamp', 1)) {
+    if (config_get('userpoints.settings', 'userpoints_transaction_timestamp')) {
       return $this;
     }
     $this->time_stamp = $time_stamp;
@@ -468,7 +468,7 @@ class UserpointsTransaction extends Entity {
   function getEntity() {
     if (!empty($this->entity_id) && !empty($this->entity_type) && entity_get_info($this->entity_type)) {
       // Create an array because array_shift passes in by reference.
-      $entities = entity_load($this->entity_type, array($this->entity_id));
+      $entities = entity_load($this->entity_type, $this->entity_id);
       return array_shift($entities);
     }
   }
@@ -999,6 +999,7 @@ class UserpointsTransaction extends Entity {
    *   available.
    */
   function getReason(array $options = array()) {
+    $config = config('userpoints.settings');
 
     // Default options.
     $options += array(
@@ -1033,11 +1034,11 @@ class UserpointsTransaction extends Entity {
     // Truncate description.
     $attributes = array();
     $stripped_reason = strip_tags($reason);
-    if ($options['truncate'] && drupal_strlen($stripped_reason) > variable_get('userpoints_truncate', 30) + 3) {
-      // The title attribute will be check_plain()'d again drupal_attributes(),
+    if ($options['truncate'] && backdrop_strlen($stripped_reason) > $config->get('userpoints_truncate') + 3) {
+      // The title attribute will be check_plain()'d again backdrop_attributes(),
       // avoid double escaping.
       $attributes['title'] = html_entity_decode($stripped_reason, ENT_QUOTES);
-      $reason = truncate_utf8($stripped_reason, variable_get('userpoints_truncate', 30), FALSE, TRUE);
+      $reason = truncate_utf8($stripped_reason, $config->get('userpoints_truncate'), FALSE, TRUE);
     }
 
     // Link to the referenced entity, if available.
@@ -1065,7 +1066,7 @@ class UserpointsTransaction extends Entity {
    */
   function getActions($show_view = TRUE) {
     $actions = array();
-    $url_options = array('query' => drupal_get_destination());
+    $url_options = array('query' => backdrop_get_destination());
 
     $uri = $this->defaultUri(TRUE);
     $url_prefix = $uri['path'];
@@ -1108,9 +1109,11 @@ class UserpointsTransaction extends Entity {
       UserpointsTransaction::STATUS_DECLINED => 'declined',
       UserpointsTransaction::STATUS_PENDING => 'pending',
     );
-    $row = array('class' => array(
-      'userpoints-transaction-row-status-' . $css_stati[$this->getStatus()],
-      'userpoints-transaction-row-category-' . $this->getTid()),
+    $row = array(
+      'class' => array(
+        'userpoints-transaction-row-status-' . $css_stati[$this->getStatus()],
+        'userpoints-transaction-row-category-' . $this->getTid(),
+      ),
     );
     if ($settings['show_user']) {
       $row['data'][] = array(
@@ -1157,6 +1160,35 @@ class UserpointsTransaction extends Entity {
   public function resetOriginalStatus() {
     $this->orig_status = $this->getStatus();
   }
+  /**
+   * Implements EntityInterface::id().
+   */
+  public function id() {
+    return $this->entity_id;
+  }
+
+  /**
+   * Implements EntityInterface::entityType().
+   */
+  public function entityType() {
+    return 'userpoints_transaction';
+  }
+
+  /**
+   * Implements EntityInterface::label().
+   */
+  public function label() {
+    return $this->reference;
+  }
+
+  /**
+   * Implements EntityInterface::uri().
+   */
+  public function uri() {
+    return array(
+      'path' => '',
+    );
+  }
 }
 
 /**
@@ -1194,16 +1226,16 @@ class UserpointsTransactionIncompleteException extends Exception {
 /**
  * Userpoints transaction controller.
  */
-class UserpointsTransactionController extends EntityAPIController {
+class UserpointsTransactionController extends EntityDatabaseStorageController {
 
   /**
-   * Overrides EntityAPIController::save().
+   * Overrides EntityDatabaseStorageController::save().
    *
    * It is not permitted to update a approved or denied transaction except
    * marking it as expird. Any attemt to change a property of such a transaction
    * will result in an immediate exception.
    */
-  public function save($entity, DatabaseTransaction $transaction = NULL) {
+  public function save(EntityInterface $entity) {
 
     // Prevent saving when any of the required properties are missing.
     if (!$entity->getPoints() || !$entity->getUid() || !$entity->getOperation()) {
@@ -1221,7 +1253,7 @@ class UserpointsTransactionController extends EntityAPIController {
       return FALSE;
     }
 
-    $return = parent::save($entity, $transaction);
+    $return = parent::save($entity);
 
     // Update totals if the transaction is approved and not expired.
     if ($entity->isApproved() && !$entity->isExpired()) {
@@ -1230,7 +1262,7 @@ class UserpointsTransactionController extends EntityAPIController {
 
     // Display a message unless disabled or no message exists.
     if ($entity->getDisplay() && $message = $entity->getMessage()) {
-      drupal_set_message($message);
+      backdrop_set_message($message);
     }
 
     // Reset original status to current one
@@ -1293,7 +1325,7 @@ class UserpointsTransactionController extends EntityAPIController {
 /**
  * Extends property metadata for the Userpoints Transaction entity.
  */
-class UserpointsTransactionMetadataController extends EntityDefaultMetadataController {
+class UserpointsTransactionMetadataController {//extends EntityDefaultMetadataController {
 
   /**
    * Overrides EntityDefaultMetadataController::entityPropertyInfo().
@@ -1308,7 +1340,7 @@ class UserpointsTransactionMetadataController extends EntityDefaultMetadataContr
       'description' => t('The user that will receive the !points', userpoints_translation()),
       'setter callback' => 'userpoints_transaction_property_set',
       'getter callback' => 'userpoints_transaction_property_get',
-      'schema field' => 'uid'
+      'schema field' => 'uid',
     );
     $properties['points']['label'] = t('!Points', userpoints_translation());
     $properties['points']['description'] = t('Amount of !points to give or take.', userpoints_translation());
@@ -1463,10 +1495,38 @@ class UserpointsTransactionType extends Entity {
    */
   public $name;
 
-  function __construct($values = array()) {
-    parent::__construct($values, 'userpoints_transaction_type');
+  function __construct(array $values) {
+    parent::__construct($values);
+  }
+  /**
+   * Implements EntityInterface::id().
+   */
+  public function id() {
+    return $this->name;
   }
 
+  /**
+   * Implements EntityInterface::entityType().
+   */
+  public function entityType() {
+    return 'userpoints_transaction_type';
+  }
+
+  /**
+   * Implements EntityInterface::label().
+   */
+  public function label() {
+    return $this->label;
+  }
+
+  /**
+   * Implements EntityInterface::uri().
+   */
+  public function uri() {
+    return array(
+      'path' => '',
+    );
+  }
 }
 
 /**
@@ -1497,7 +1557,7 @@ class UserpointsTransactionTypeUIController extends EntityDefaultUIController {
         $items[$new_path] = $items[$path];
         $items[$new_path]['page arguments'][1] = 5;
 
-        if (isset($items[$new_path]['page arguments'][0]) &&
+        if (isset($items[$new_path]['page arguments'][0]) && 
             $items[$new_path]['page arguments'][0] == 'userpoints_transaction_type_operation_form') {
           // Entity API fails to use the correct bundle argument defined in
           // entity info.
@@ -1523,7 +1583,7 @@ class UserpointsTransactionTypeUIController extends EntityDefaultUIController {
       'data' => array(
         '#theme' => 'entity_ui_overview_item',
         '#label' => entity_label($this->entityType, $entity),
-        '#name' => !empty($this->entityInfo['exportable']) ? entity_id($this->entityType, $entity) : FALSE,
+        '#name' => !empty($this->entityInfo['exportable']) ? $entity->id() : FALSE,
         '#url' => $entity_uri ? $entity_uri : FALSE,
         '#entity_type' => $this->entityType,
       ),
@@ -1549,7 +1609,7 @@ class UserpointsTransactionTypeUIController extends EntityDefaultUIController {
     $i18n = !empty($this->entityInfo['i18n controller class']);
 
     // Add operations depending on the status.
-    if (entity_has_status($this->entityType, $entity, ENTITY_FIXED)) {
+    if (entity_ui_entity_has_status($this->entityType, $entity, ENTITY_FIXED)) {
       $row[] = array(
         'data' => l(t('clone'), $this->path . '/' . $id . '/clone'),
         'colspan' => $this->operationCount(),
@@ -1569,11 +1629,11 @@ class UserpointsTransactionTypeUIController extends EntityDefaultUIController {
         $row[] = l(t('clone'), $this->path . '/' . $id . '/clone');
       }
 
-      if (empty($this->entityInfo['exportable']) || !entity_has_status($this->entityType, $entity, ENTITY_IN_CODE)) {
-        $row[] = l(t('delete'), $this->path . '/' . $id . '/delete', array('query' => drupal_get_destination()));
+      if (empty($this->entityInfo['exportable']) || !entity_ui_entity_has_status($this->entityType, $entity, ENTITY_IN_CODE)) {
+        $row[] = l(t('delete'), $this->path . '/' . $id . '/delete', array('query' => backdrop_get_destination()));
       }
-      elseif (entity_has_status($this->entityType, $entity, ENTITY_OVERRIDDEN)) {
-        $row[] = l(t('revert'), $this->path . '/' . $id . '/revert', array('query' => drupal_get_destination()));
+      elseif (entity_ui_entity_has_status($this->entityType, $entity, ENTITY_OVERRIDDEN)) {
+        $row[] = l(t('revert'), $this->path . '/' . $id . '/revert', array('query' => backdrop_get_destination()));
       }
       else {
         $row[] = '';

@@ -4,7 +4,8 @@ description = Provides integration of Userpoints with rules
 dependencies[] = userpoints 
 dependencies[] = rules
 package = Userpoints
-core = 7.x
+backdrop = 1.x
+type = module
 files[]=userpoints_rules.rules.inc
 files[]=userpoints_rules.test
 

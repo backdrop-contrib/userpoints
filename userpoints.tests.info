@@ -1,0 +1,43 @@
+[UserpointsBaseTestCase]
+name = UserpointsBaseTestCase
+description = UserpointsBaseTestCase
+group = userpoints
+file = userpoints.test
+
+[UserpointsAPITestCase]
+name = Userpoints API
+description = Tests the core API for proper inserts & updates to the database tables,
+			  moderation, expiration, as well as permission checks
+group = Userpoints
+file = userpoints.test
+
+[UserpointsAdminTestCase]
+name = Userpoints Admin
+description = Test various userpoints administration forms and listings.
+group = Userpoints
+file = userpoints.test
+
+[UserpointsGrantPointsTestCase]
+name = Userpoints grant points
+description = Tests the core API for proper inserts & updates to the database tables.
+group = Userpoints
+file = userpoints.test
+
+[UserpointsFieldsTestCase]
+name = Userpoints fields.
+description = Tests integration with fields.
+group = Userpoints
+file = userpoints.test
+
+[UserpointsUpdate7200TestCase]
+name = Userpoints update 7200
+description = Assert that database update 7200 works
+group = Userpoints
+file = userpoints.test
+
+[UserpointsUpdate7200AlternateTestCase]
+name = Userpoints update 7200 (alternate)
+description = Assert that database update 7200 works. This uses a different database dump.
+group = Userpoints
+file = userpoints.test
+

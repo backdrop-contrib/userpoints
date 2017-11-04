@@ -11,7 +11,7 @@
 /**
  * Userpoints base test class with various helper functions.
  */
-class UserpointsBaseTestCase extends DrupalWebTestCase {
+class UserpointsBaseTestCase extends BackdropWebTestCase {
 
   /**
    * Add points through the admin form.
@@ -34,7 +34,7 @@ class UserpointsBaseTestCase extends DrupalWebTestCase {
       'txn_user' => $user->name,
       'points' => $points,
     ) + $additional;
-    $this->drupalPost('admin/config/people/userpoints/add', $edit, t('Save'));
+    $this->backdropPost('admin/config/people/userpoints/add', $edit, t('Save'));
     if ($total !== NULL) {
       $categories = userpoints_get_categories();
       $tid = userpoints_get_default_tid();
@@ -70,7 +70,7 @@ class UserpointsBaseTestCase extends DrupalWebTestCase {
     $this->assertEqual($current, $api_current, t('Current points for tid %tid are correct (expected: %expected, actual: %actual).', array('%expected' => $current, '%actual' => $api_current, '%tid' => $tid)));
     if ($max !== NULL) {
       // Hijack static cache, delete this item from it.
-      $max_cache = &drupal_static('userpoints_get_max_points', array());
+      $max_cache = &backdrop_static('userpoints_get_max_points', array());
       unset($max_cache[$uid][$tid]);
       $api_max = userpoints_get_max_points($uid, $tid);
       $this->assertEqual($max, $api_max, t('Max points for tid %tid are correct (expected: %expected, actual: %actual).', array('%expected' => $max, '%actual' => $api_max, '%tid' => $tid)));
@@ -105,11 +105,11 @@ class UserpointsAPITestCase extends UserpointsBaseTestCase {
     parent::setUp('userpoints');
 
     // Create an administrator account.
-    $this->admin_user = $this->drupalCreateUser(array('administer userpoints'));
+    $this->admin_user = $this->backdropCreateUser(array('administer userpoints'));
 
-    // Create a standard Drupal account and log in as that person.
-    $this->non_admin_user = $this->drupalCreateUser();
-    $this->drupalLogin($this->non_admin_user);
+    // Create a standard Backdrop account and log in as that person.
+    $this->non_admin_user = $this->backdropCreateUser();
+    $this->backdropLogin($this->non_admin_user);
   }
 
   /**
@@ -215,7 +215,7 @@ class UserpointsAPITestCase extends UserpointsBaseTestCase {
       ->execute();
 
     // Set a default expire time.
-    variable_set(USERPOINTS_EXPIREON_DATE, REQUEST_TIME + 5000);
+    config_set('userpoints.settings', USERPOINTS_EXPIREON_DATE, REQUEST_TIME + 5000);
 
     // Add two different points in, one to post immediately another to expire in the future.
     $keep_points = rand(1, 100);
@@ -235,7 +235,7 @@ class UserpointsAPITestCase extends UserpointsBaseTestCase {
     $time_stamp = db_query('SELECT time_stamp FROM {userpoints_txn} WHERE operation = :op', array(':op' => 'must_expire'))->fetchField();
 
     // Call cron to check expiration.
-    drupal_cron_run();
+    backdrop_cron_run();
 
     // Check the user points removed or not if the point was expiration.
     $this->assertEqual($this->getTxnPoints($this->non_admin_user->uid, NULL, TRUE), $keep_points, t("Successfully removed expired points from the txn table."));
@@ -258,7 +258,7 @@ class UserpointsAPITestCase extends UserpointsBaseTestCase {
    */
   function testDefaultExpireDate() {
     // Login as an admin.
-    $this->drupalLogin($this->admin_user);
+    $this->backdropLogin($this->admin_user);
 
     // Use a date in the future.
     $date = REQUEST_TIME + 100000;
@@ -274,10 +274,10 @@ class UserpointsAPITestCase extends UserpointsBaseTestCase {
       'userpoints_expireon_date[day]' => $date_array['day'],
       'userpoints_expireon_date[year]' => $date_array['year'],
     );
-    $this->drupalPost('admin/config/people/userpoints/settings', $edit, 'Save configuration');
+    $this->backdropPost('admin/config/people/userpoints/settings', $edit, 'Save configuration');
 
     // Check database.
-    $database_date = variable_get('userpoints_expireon_date', FALSE);
+    $database_date = config_get('userpoints.settings', 'userpoints_expireon_date', FALSE);
     $this->assertEqual($database_date['day'], $date_array['day']);
     $this->assertEqual($database_date['month'], $date_array['month']);
     $this->assertEqual($database_date['year'], $date_array['year']);
@@ -305,24 +305,24 @@ class UserpointsAPITestCase extends UserpointsBaseTestCase {
     taxonomy_term_save($term);
 
     // login as admin userpoints
-    $this->admin_user = $this->drupalCreateUser(array('administer userpoints'));
-    $this->drupalLogin($this->admin_user);
+    $this->admin_user = $this->backdropCreateUser(array('administer userpoints'));
+    $this->backdropLogin($this->admin_user);
 
     // save settings.
     $edit = array(
         'userpoints_category_default_tid' => $term->tid,
     );
-    $this->drupalPost('admin/config/people/userpoints/settings', $edit, 'Save configuration');
+    $this->backdropPost('admin/config/people/userpoints/settings', $edit, 'Save configuration');
 
     // Check database.
-    $this->assertEqual(variable_get('userpoints_category_default_tid', FALSE), $term->tid);
+    $this->assertEqual(config_get('userpoints.settings', 'userpoints_category_default_tid'), $term->tid);
 
     // check API.
     $tid = userpoints_get_default_tid();
     $this->assertEqual($tid, $term->tid);
 
     // Check database.
-    $this->assertTrue(variable_get('userpoints_category_default_vid', FALSE) != FALSE, t("Successfully verified the vocab ID in the database."));
+    $this->assertTrue(config_get('userpoints.settings', 'userpoints_category_default_vid') != FALSE, t("Successfully verified the vocab ID in the database."));
 
     // Check API.
     $vid = userpoints_get_vid();
@@ -337,12 +337,12 @@ class UserpointsAPITestCase extends UserpointsBaseTestCase {
     $points = 10;
 
     // check permission with admin user.
-    $this->admin_user = $this->drupalCreateUser(array('administer userpoints'));
-    $this->drupalLogin($this->admin_user);
+    $this->admin_user = $this->backdropCreateUser(array('administer userpoints'));
+    $this->backdropLogin($this->admin_user);
 
     // check access page.
-    $this->drupalGet('admin/config/people/userpoints');
-    $content = $this->drupalGetContent();
+    $this->backdropGet('admin/config/people/userpoints');
+    $content = $this->backdropGetContent();
     $content = strstr($content, 'Access denied');
     $this->assertTrue($content == FALSE, t("Successful navigated to the page modify points"));
 
@@ -353,14 +353,14 @@ class UserpointsAPITestCase extends UserpointsBaseTestCase {
     $this->assertEqual($this->getTxnPoints($this->admin_user->uid, $points), $points, t("Successful verified that points were added into database."));
 
     // logout and change user.
-    $this->drupalLogout();
+    $this->backdropLogout();
 
     // check permission with view user.
-    $view_user = $this->drupalCreateUser(array('view userpoints'));
-    $this->drupalLogin($view_user);
+    $view_user = $this->backdropCreateUser(array('view userpoints'));
+    $this->backdropLogin($view_user);
 
     // check access page.
-    $this->drupalGet('admin/config/people/userpoints');
+    $this->backdropGet('admin/config/people/userpoints');
     $this->assertResponse(403, t("Successful verified that a user without admin userpoints permissions can not access the admin interface."));
   }
 
@@ -374,43 +374,43 @@ class UserpointsAPITestCase extends UserpointsBaseTestCase {
   function testUserTransactionPermissions() {
     // Sets default points and creates default test users.
     $points = 10;
-    $view_own_transactions_user = $this->DrupalCreateUser(array('view own userpoints transactions'));
-    $view_all_transactions_user = $this->DrupalCreateUser(array('view userpoints transactions'));
+    $view_own_transactions_user = $this->BackdropCreateUser(array('view own userpoints transactions'));
+    $view_all_transactions_user = $this->BackdropCreateUser(array('view userpoints transactions'));
 
     // Login with the admin user.
-    $this->drupalLogin($this->admin_user);
+    $this->backdropLogin($this->admin_user);
     // Add points to every user created.
     $this->addPoints($points, $this->non_admin_user);
     $this->addPoints($points, $view_own_transactions_user);
     $this->addPoints($points, $view_all_transactions_user);
 
     // Login with no permissions.
-    $this->drupalLogin($this->non_admin_user);
+    $this->backdropLogin($this->non_admin_user);
     // Checking own account.
-    $this->drupalGet('myuserpoints');
+    $this->backdropGet('myuserpoints');
     $this->assertResponse(403, t("Successful verified that a user without view own userpoints transactions permission can not access to myuserpoints."));
     // Checking against other's user account.
-    $this->drupalGet('user/'.$view_all_transactions_user->uid.'/points');
+    $this->backdropGet('user/'.$view_all_transactions_user->uid.'/points');
     $this->assertResponse(403, t("Successful verified that a user without view own userpoints transactions permission can not access to others user points transactions."));
 
     // Login as view own userpoints transactions.
-    $this->drupalLogin($view_own_transactions_user);
+    $this->backdropLogin($view_own_transactions_user);
     // Checking own account.
-    $this->drupalGet('myuserpoints');
+    $this->backdropGet('myuserpoints');
     $this->assertResponse(200, t("Successful verified that a user with view own userpoints transactions permission can access to myuserpoints."));
-    $this->drupalGet('user');
+    $this->backdropGet('user');
     // Checking against other's user account.
-    $this->drupalGet('user/'.$view_all_transactions_user->uid.'/points');
+    $this->backdropGet('user/'.$view_all_transactions_user->uid.'/points');
     $this->assertResponse(403, t("Successful verified that a user with view own userpoints transactions permission can not access to others user points transactions."));
 
     // Login as view userpoints transactions.
-    $this->drupalLogin($view_all_transactions_user);
+    $this->backdropLogin($view_all_transactions_user);
     // Checking own account.
-    $this->drupalGet('myuserpoints');
+    $this->backdropGet('myuserpoints');
     $this->assertResponse(200, t("Successful verified that a user with view userpoints transactions can access to myuserpoints."));
-    $this->drupalGet('user');
+    $this->backdropGet('user');
     // Checking against other's user account.
-    $this->drupalGet('user/'.$this->non_admin_user->uid.'/points');
+    $this->backdropGet('user/'.$this->non_admin_user->uid.'/points');
     $this->assertResponse(200, t("Successful verified that a user with view userpoints transactions permission can access to others user points transactions."));
   }
 
@@ -424,38 +424,38 @@ class UserpointsAPITestCase extends UserpointsBaseTestCase {
   function testUserTransactionLinksPermissions() {
     // Sets default points and creates default test users
     $points = 10;
-    $view_own_transactions_links_user = $this->DrupalCreateUser(array('access user profiles', 'view own userpoints', 'view own userpoints transactions'));
-    $view_all_transactions_links_user = $this->DrupalCreateUser(array('access user profiles', 'view userpoints', 'view userpoints transactions'));
+    $view_own_transactions_links_user = $this->BackdropCreateUser(array('access user profiles', 'view own userpoints', 'view own userpoints transactions'));
+    $view_all_transactions_links_user = $this->BackdropCreateUser(array('access user profiles', 'view userpoints', 'view userpoints transactions'));
 
     // Login with the admin user.
-    $this->drupalLogin($this->admin_user);
+    $this->backdropLogin($this->admin_user);
     // Add points to every user created.
     $this->addPoints($points, $this->non_admin_user);
     $this->addPoints($points, $view_own_transactions_links_user);
     $this->addPoints($points, $view_all_transactions_links_user);
 
     // Login with no permissions.
-    $this->drupalLogin($this->non_admin_user);
+    $this->backdropLogin($this->non_admin_user);
     // Checking own user account.
-    $this->drupalGet('user');
+    $this->backdropGet('user');
     $this->assertNoLink(t('View !points transactions', userpoints_translation()),t("Successful verified that a user without view own userpoints transactions permission can not access to view points transaction link."));
 
     // Login as access user profiles, view own userpoints, view own userpoints transactions.
-    $this->drupalLogin($view_own_transactions_links_user);
+    $this->backdropLogin($view_own_transactions_links_user);
     // Checking own user account.
-    $this->drupalGet('user');
+    $this->backdropGet('user');
     $this->assertLink(t('View !points transactions', userpoints_translation()), 0, t("Successful verified that a user with view own userpoints transactions permission and view own userpoints permission can access to view own points transaction link."));
     // Checking others user accounts.
-    $this->drupalGet('user/'.$view_all_transactions_links_user->uid);
+    $this->backdropGet('user/'.$view_all_transactions_links_user->uid);
     $this->assertNoLink(t('View !points transactions', userpoints_translation()), t("Successful verified that a user with view own userpoints transactions permission and view own userpoints permission can not access to view points transaction link from other user."));
 
     // Login as access user profiles, view userpoints, view userpoints transactions.
-    $this->drupalLogin($view_all_transactions_links_user);
+    $this->backdropLogin($view_all_transactions_links_user);
     // Checking own user account.
-    $this->drupalGet('user');
+    $this->backdropGet('user');
     $this->assertLink(t('View !points transactions', userpoints_translation()), 0, t("Successful verified that a user with view userpoints transactions permission and view userpoints permission can access to view points transaction link."));
     // Checking others user accounts.
-    $this->drupalGet('user/'.$view_own_transactions_links_user->uid);
+    $this->backdropGet('user/'.$view_own_transactions_links_user->uid);
     $this->assertLink(t('View !points transactions', userpoints_translation()), 0, t("Successful verified that a user with view userpoints transactions permission and view userpoints permission can access to view points transaction link from other user."));
   }
 }
@@ -486,13 +486,13 @@ class UserpointsAdminTestCase extends UserpointsBaseTestCase {
     parent::setUp('userpoints');
 
     // Create an administrator account and log in with that.
-    $this->admin_user = $this->drupalCreateUser(array('administer userpoints'));
-    $this->drupalLogin($this->admin_user);
+    $this->admin_user = $this->backdropCreateUser(array('administer userpoints'));
+    $this->backdropLogin($this->admin_user);
   }
 
 
   function testAddEditPoints() {
-    $user = $this->drupalCreateUser();
+    $user = $this->backdropCreateUser();
 
     $categories = userpoints_get_categories();
     $tid = userpoints_get_default_tid();
@@ -532,7 +532,7 @@ class UserpointsAdminTestCase extends UserpointsBaseTestCase {
       'reference' => $this->randomName(),
       'status' => UserpointsTransaction::STATUS_APPROVED,
     );
-    $this->drupalPost(NULL, $edit, t('Save'));
+    $this->backdropPost(NULL, $edit, t('Save'));
 
     // Verify that the transaction has been updated.
     $this->assertEqual(7, userpoints_get_current_points($user->uid));
@@ -585,11 +585,11 @@ class UserpointsGrantPointsTestCase extends UserpointsBaseTestCase {
     parent::setUp('userpoints');
 
     // Create an administrator account.
-    $this->admin_user = $this->drupalCreateUser(array('administer userpoints'));
+    $this->admin_user = $this->backdropCreateUser(array('administer userpoints'));
 
-    // Create a standard Drupal account and log in as that person.
-    $this->non_admin_user = $this->drupalCreateUser();
-    $this->drupalLogin($this->non_admin_user);
+    // Create a standard Backdrop account and log in as that person.
+    $this->non_admin_user = $this->backdropCreateUser();
+    $this->backdropLogin($this->non_admin_user);
   }
 
   /**
@@ -677,8 +677,8 @@ class UserpointsFieldsTestCase extends UserpointsBaseTestCase {
 
   function testSingleField() {
     // Create an administrator account.
-    $admin = $this->drupalCreateUser(array('administer userpoints'));
-    $this->drupalLogin($admin);
+    $admin = $this->backdropCreateUser(array('administer userpoints'));
+    $this->backdropLogin($admin);
 
     // Create a new field.
     $edit = array(
@@ -687,9 +687,9 @@ class UserpointsFieldsTestCase extends UserpointsBaseTestCase {
       'fields[_add_new_field][type]' => 'text',
       'fields[_add_new_field][widget_type]' => 'text_textfield',
     );
-    $this->drupalPost('admin/config/people/userpoints/types/userpoints/fields', $edit, t('Save'));
-    $this->drupalPost(NULL, array(), t('Save field settings'));
-    $this->drupalPost(NULL, array(), t('Save settings'));
+    $this->backdropPost('admin/config/people/userpoints/types/userpoints/fields', $edit, t('Save'));
+    $this->backdropPost(NULL, array(), t('Save field settings'));
+    $this->backdropPost(NULL, array(), t('Save settings'));
 
     // Create transaction.
     $message = array(
@@ -697,10 +697,10 @@ class UserpointsFieldsTestCase extends UserpointsBaseTestCase {
       'points' => 10,
       'field_' . $name . '[' . LANGUAGE_NONE . '][0][value]' => $this->randomName(50),
     );
-    $this->drupalPost('admin/config/people/userpoints/add', $message, t('Save'));
+    $this->backdropPost('admin/config/people/userpoints/add', $message, t('Save'));
 
     // Check message.
-    $this->drupalGet('myuserpoints');
+    $this->backdropGet('myuserpoints');
     $this->clickLink(t('view'));
 
     $this->assertText($message['field_' . $name . '[' . LANGUAGE_NONE . '][0][value]'], t('Content of new field is displayed.'));
@@ -728,15 +728,15 @@ class UserpointsUpdate7200TestCase extends UpdatePathTestCase {
   public function setUp() {
 
     $this->databaseDumpFiles = array(
-      drupal_get_path('module', 'simpletest') . '/tests/upgrade/drupal-7.bare.standard_all.database.php.gz',
-      drupal_get_path('module', 'userpoints') . '/tests/userpoints.filled.database.php',
+      backdrop_get_path('module', 'simpletest') . '/tests/upgrade/backdrop-7.bare.standard_all.database.php.gz',
+      backdrop_get_path('module', 'userpoints') . '/tests/userpoints.filled.database.php',
     );
 
     parent::setUp();
 
     // Shamelessly taken from botcha module.
-    spl_autoload_register('drupal_autoload_class');
-    spl_autoload_register('drupal_autoload_interface');
+    spl_autoload_register('backdrop_autoload_class');
+    spl_autoload_register('backdrop_autoload_interface');
     registry_rebuild();
   }
 
@@ -748,7 +748,7 @@ class UserpointsUpdate7200TestCase extends UpdatePathTestCase {
 
     $this->assertTrue($update);
 
-    $this->drupalGet('admin/config/people/userpoints/types');
+    $this->backdropGet('admin/config/people/userpoints/types');
     $this->assertRaw(t('Default'));
   }
 
@@ -775,14 +775,14 @@ class UserpointsUpdate7200AlternateTestCase extends UpdatePathTestCase {
   public function setUp() {
 
     $this->databaseDumpFiles = array(
-      drupal_get_path('module', 'userpoints') . '/tests/userpoints.filled.database.all.php.gz',
+      backdrop_get_path('module', 'userpoints') . '/tests/userpoints.filled.database.all.php.gz',
     );
 
     parent::setUp();
 
     // Shamelessly taken from botcha module.
-    spl_autoload_register('drupal_autoload_class');
-    spl_autoload_register('drupal_autoload_interface');
+    spl_autoload_register('backdrop_autoload_class');
+    spl_autoload_register('backdrop_autoload_interface');
     registry_rebuild();
   }
 
@@ -794,7 +794,7 @@ class UserpointsUpdate7200AlternateTestCase extends UpdatePathTestCase {
 
     $this->assertTrue($update);
 
-    $this->drupalGet('admin/config/people/userpoints/types');
+    $this->backdropGet('admin/config/people/userpoints/types');
     $this->assertRaw(t('Default'));
   }
 

@@ -16,11 +16,11 @@ function theme_userpoints_view_category($variables) {
 
   $output = '';
   if (!empty($element['#title'])) {
-    $output .= '<h3 ' . drupal_attributes(($element['#attributes'])) . '>' . $element['#title'] . '</h3>';
+    $output .= '<h3 ' . backdrop_attributes(($element['#attributes'])) . '>' . $element['#title'] . '</h3>';
   }
 
-  $output .= '<dl ' . drupal_attributes(($element['#attributes'])) . '>';
-  $output .= drupal_render_children($element);
+  $output .= '<dl ' . backdrop_attributes(($element['#attributes'])) . '>';
+  $output .= backdrop_render_children($element);
   $output .= '</dl>';
 
   return $output;
@@ -35,8 +35,8 @@ function theme_userpoints_view_item($variables) {
     '#attributes' => array(),
   );
 
-  $output = '<dt ' . drupal_attributes(($element['#attributes'])) . '>' . $element['#title'] . '</dt>';
-  $output .= '<dd ' . drupal_attributes(($element['#attributes'])) . '>' . $element['#value'] . '</dd>';
+  $output = '<dt ' . backdrop_attributes(($element['#attributes'])) . '>' . $element['#title'] . '</dt>';
+  $output .= '<dd ' . backdrop_attributes(($element['#attributes'])) . '>' . $element['#value'] . '</dd>';
 
   return $output;
 }

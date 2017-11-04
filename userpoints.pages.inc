@@ -34,13 +34,14 @@ function userpoints_list_transactions($form, &$form_state, $account = NULL, $tid
   );
   $header = userpoints_get_transaction_header($settings);
 
+  // TODO This variable was probably removed in Backdrop without replacement.
   $query = db_select('userpoints_txn', 'p')->extend('PagerDefault')->extend('TableSort')
     ->fields('p', array('txn_id'))
     ->condition('p.uid', $account->uid)
     ->orderByHeader($header)
     // Enforce consistent sort order.
     ->orderBy('p.txn_id', 'DESC')
-    ->limit(variable_get(USERPOINTS_REPORT_LIMIT, 10));
+    ->limit(config_get('userpoints.settings', USERPOINTS_REPORT_LIMIT));
 
   if (module_exists('taxonomy')) {
     $query->leftJoin('taxonomy_term_data', 't', 'p.tid = t.tid');
@@ -56,11 +57,14 @@ function userpoints_list_transactions($form, &$form_state, $account = NULL, $tid
   userpoints_filter_query($unapproved_query, $values);
 
   if (isset($active_category)) {
-    drupal_set_title(t('!Points for @username (%category category)', userpoints_translation() + array('%category' => $active_category, '@username' => format_username($account))), PASS_THROUGH);
+    backdrop_set_title(t('!Points for @username (%category category)', userpoints_translation() + array(
+      '%category' => $active_category,
+      '@username' => user_format_name($account),
+    )), PASS_THROUGH);
     $total_title = t('Total !points (%category category)', userpoints_translation() + array('%category' => $active_category));
   }
   else {
-    drupal_set_title(t('!Points for @username', userpoints_translation() + array('@username' => format_username($account))));
+    backdrop_set_title(t('!Points for @username', userpoints_translation() + array('@username' => user_format_name($account))));
     $total_title = t('Total !points', userpoints_translation());
   }
 
@@ -76,7 +80,7 @@ function userpoints_list_transactions($form, &$form_state, $account = NULL, $tid
     '#account' => $account,
     '#attached' => array(
       'css' => array(
-        drupal_get_path('module', 'userpoints') . '/userpoints.css',
+        backdrop_get_path('module', 'userpoints') . '/userpoints.css',
       ),
     ),
   );
@@ -101,7 +105,7 @@ function userpoints_list_transactions($form, &$form_state, $account = NULL, $tid
   );
 
   // Fetch pending (not yet approved) points according to the category filter.
-  $pending = (int)$unapproved_query
+  $pending = (int) $unapproved_query
     ->execute()
     ->fetchField();
 
@@ -118,11 +122,11 @@ function userpoints_list_transactions($form, &$form_state, $account = NULL, $tid
     ),
     '#rows' => array(
       array(
-        'data' => array(t('Approved !points', userpoints_translation()), theme('userpoints_points', array('points'=>$approved))),
+        'data' => array(t('Approved !points', userpoints_translation()), theme('userpoints_points', array('points' => $approved))),
         'class' => array('userpoints-myuserpoints-total-approved'),
       ),
       array(
-        'data' => array(t('Pending !points', userpoints_translation()), theme('userpoints_points', array('points'=>$pending))),
+        'data' => array(t('Pending !points', userpoints_translation()), theme('userpoints_points', array('points' => $pending))),
         'class' => array('userpoints-myuserpoints-total-pending'),
       ),
     ),
@@ -133,7 +137,7 @@ function userpoints_list_transactions($form, &$form_state, $account = NULL, $tid
   // For simplicity, the generated output is passed to a custom alter function.
   // This would also be possible through hook_page_alter(), but that hook is
   // hard to use.
-  drupal_alter('userpoints_list_transactions', $output);
+  backdrop_alter('userpoints_list_transactions', $output);
 
   return $output;
 }
@@ -143,6 +147,7 @@ function userpoints_list_transactions($form, &$form_state, $account = NULL, $tid
  * Lists the users and their point totals by all or by category.
  */
 function userpoints_list_users($form, &$form_state, $tid = NULL) {
+  $config = config('userpoints.settings');
 
   // If this is an AJAX request, update $_GET['q'] so that table sorting and
   // similar links are using the correct base path.
@@ -160,7 +165,7 @@ function userpoints_list_users($form, &$form_state, $tid = NULL) {
     ->groupBy('p.points')
     ->groupBy('p.tid')
     ->orderByHeader($header)
-    ->limit(variable_get(USERPOINTS_REPORT_USERCOUNT, 30));
+    ->limit($config->get(USERPOINTS_REPORT_USERCOUNT));
 
   $query->join('users', 'u', 'p.uid = u.uid');
   if (module_exists('taxonomy')) {
@@ -172,13 +177,14 @@ function userpoints_list_users($form, &$form_state, $tid = NULL) {
   $active_category = userpoints_filter_query($query, $values);
 
   if (isset($active_category)) {
-    drupal_set_title(t('All points (%category category)', userpoints_translation() + array('%category' => $active_category)), PASS_THROUGH);
+    backdrop_set_title(t('All points (%category category)', userpoints_translation() + array('%category' => $active_category)), PASS_THROUGH);
   }
   else {
-    drupal_set_title(t('All points'));
+    backdrop_set_title(t('All points'));
   }
 
-  if (variable_get(USERPOINTS_REPORT_DISPLAYZERO, 1) == 0) {
+  // TODO This variable was probably removed in Backdrop without replacement.
+  if ($config->get(USERPOINTS_REPORT_DISPLAYZERO) == 0) {
     // The user would NOT like to see users with zero points.
     $query->condition('p.points', 0, '<>');
   }
@@ -204,7 +210,7 @@ function userpoints_list_users($form, &$form_state, $tid = NULL) {
   );
 
   // Allow other modules and themes to customize the result.
-  drupal_alter('userpoints_list', $output);
+  backdrop_alter('userpoints_list', $output);
 
   return $output;
 }
@@ -218,10 +224,10 @@ function userpoints_list_users($form, &$form_state, $tid = NULL) {
  *   Render-able array with all the information about this transaction.
  */
 function userpoints_view_transaction($transaction) {
-  drupal_add_css(drupal_get_path('module', 'userpoints') . '/userpoints.css');
+  backdrop_add_css(backdrop_get_path('module', 'userpoints') . '/userpoints.css');
 
   field_attach_prepare_view('userpoints_transaction', array($transaction->getTxnId() => $transaction), 'full');
-  drupal_set_title(t('View transaction #@txn_id', array('@txn_id' => $transaction->txn_id)));
+  backdrop_set_title(t('View transaction #@txn_id', array('@txn_id' => $transaction->txn_id)));
 
   $css_stati = array(
     UserpointsTransaction::STATUS_APPROVED => 'approved',

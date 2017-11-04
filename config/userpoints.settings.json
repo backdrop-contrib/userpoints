@@ -1,0 +1,7 @@
+{
+    "_config_name": "userpoints.settings",
+    "userpoints_truncate": "30",
+    "userpoints_default_bundle": "userpoints",
+    "userpoints_points_moderation": "UserpointsTransaction::STATUS_APPROVED",
+    "userpoints_transaction_timestamp": "1"
+}

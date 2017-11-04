@@ -53,7 +53,7 @@ Installation
 ------------
 To install this module, do the following:
 
-1. Extract the tar ball that you downloaded from Drupal.org.
+1. Extract the tar ball that you downloaded from Backdrop.org.
 
 2. Upload the userpoints directory and all its contents to your
    modules directory.
@@ -88,7 +88,7 @@ Author
 ------
 Khalid Baheyeldin (http://baheyeldin.com/khalid and http://2bits.com)
 
-The Drupal 7 version of this module are maintained by Berdir
+The Backdrop 7 version of this module are maintained by Berdir
 (http://drupal.org/user/214652).
 
 If you use this module, find it useful, and want to send the author

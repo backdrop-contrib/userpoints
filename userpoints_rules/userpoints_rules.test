@@ -5,7 +5,7 @@
  * Tests for Userpoints Services integration.
  */
 
-class UserpointsRulesTestCase extends DrupalWebTestCase {
+class UserpointsRulesTestCase extends BackdropWebTestCase {
 
   /**
    * Implements getInfo().
@@ -28,12 +28,12 @@ class UserpointsRulesTestCase extends DrupalWebTestCase {
    * Test the rules actions exposed by this module.
    */
   public function testActions() {
-    $user = $this->drupalCreateUser(array('view userpoints', 'view userpoints transactions'));
+    $user = $this->backdropCreateUser(array('view userpoints', 'view userpoints transactions'));
 
     $this->createActionRules();
 
-    $this->drupalLogin($user);
-    $this->drupalGet('myuserpoints');
+    $this->backdropLogin($user);
+    $this->backdropGet('myuserpoints');
 
     $this->clickLink(t('view'));
 
@@ -52,14 +52,14 @@ class UserpointsRulesTestCase extends DrupalWebTestCase {
     $this->clickLink(t('Granted points for logging in.'));
     $this->assertEqual(url('user/' . $user->uid, array('absolute' => TRUE)), $this->getUrl());
 
-    $this->drupalLogout();
+    $this->backdropLogout();
   }
 
   /**
    * Test the before and after events and the setter and getter callbacks.
    */
   public function testEvents() {
-    $user = $this->drupalCreateUser(array('view userpoints'));
+    $user = $this->backdropCreateUser(array('view userpoints'));
 
     $this->createEventRules();
 
@@ -141,7 +141,7 @@ class UserpointsRulesTestCase extends DrupalWebTestCase {
     $rule = rules_import($after_rule);
     $rule->save();
 
-    drupal_static_reset('rules_get_cache');
+    backdrop_static_reset('rules_get_cache');
     cache_clear_all('*', 'cache_rules', TRUE);
   }
 
@@ -174,7 +174,7 @@ class UserpointsRulesTestCase extends DrupalWebTestCase {
     $rule = rules_import($grant_action);
     $rule->save();
 
-    drupal_static_reset('rules_get_cache');
+    backdrop_static_reset('rules_get_cache');
     cache_clear_all('*', 'cache_rules', TRUE);
   }
 

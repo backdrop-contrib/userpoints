@@ -1,0 +1,6 @@
+[UserpointsRulesTestCase]
+name = Rules integration
+description = Tests the rules events and actions.
+group = Userpoints
+file = userpoints_rules.test
+

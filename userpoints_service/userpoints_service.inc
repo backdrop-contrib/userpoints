@@ -88,7 +88,7 @@ function userpoints_service_add($uid, $points, $tid, $operation, $description, $
     ->setEntity($entity_type, $entity_id);
 
   if ($tid !== NULL) {
-   $transaction->setTid($tid);
+    $transaction->setTid($tid);
   }
   $transaction->save();
 

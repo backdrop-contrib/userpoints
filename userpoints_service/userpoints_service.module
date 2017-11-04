@@ -4,6 +4,10 @@
  * Implementation of hook_help().
  */
 
+/**
+ * @todo Please document this function.
+ * @see http://drupal.org/node/1354
+ */
 function userpoints_service_help($section) {
   switch ($section) {
     case 'admin/help#services_userpoints':
@@ -13,7 +17,7 @@ function userpoints_service_help($section) {
 }
 
 /**
- * Implementation of hook_services_resources().
+ * Implements hook_services_resources().
  */
 function userpoints_service_services_resources() {
   return array(
@@ -49,7 +53,10 @@ function userpoints_service_services_resources() {
       ),
       'index' => array(
         'help' => 'Index of all users with points',
-        'file' => array('file' => 'inc', 'module' => 'userpoints_service'),
+        'file' => array(
+          'file' => 'inc',
+          'module' => 'userpoints_service',
+        ),
         'callback' => 'userpoints_service_index',
         'access callback' => 'userpoints_service_view_access',
         'args' => array(
@@ -89,7 +96,10 @@ function userpoints_service_services_resources() {
       'actions' => array(
         'add' => array(
           'help' => 'Add or subtract a given amount of points for a user',
-          'file' => array('file' => 'inc', 'module' => 'userpoints_service'),
+          'file' => array(
+            'file' => 'inc',
+            'module' => 'userpoints_service',
+          ),
           'callback' => 'userpoints_service_add',
           'access callback' => 'userpoints_admin_access',
           'access arguments' => array('add'),
@@ -98,7 +108,7 @@ function userpoints_service_services_resources() {
               'name' => 'uid',
               'type' => 'int',
               'optional' => FALSE,
-              'description' => 'A valid Drupal User ID.',
+              'description' => 'A valid Backdrop User ID.',
               'source' => array('data' => 'uid'),
             ),
             array(
@@ -147,5 +157,13 @@ function userpoints_service_services_resources() {
         ),
       ),
     ),
+  );
+}
+
+/**
+ * Implements hook_autoload_info().
+ */
+function userpoints_service_autoload_info() {
+  return array(
   );
 }

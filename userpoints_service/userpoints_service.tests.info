@@ -1,0 +1,6 @@
+[UserpointsServiceTestCase]
+name = Services integration
+description = Tests the services resource userpoints and actions
+group = Userpoints
+file = userpoints_service.test
+

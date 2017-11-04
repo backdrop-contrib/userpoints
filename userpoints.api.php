@@ -90,7 +90,7 @@ function hook_userpoints_list_transactions_alter(&$output) {
  *   the #group settings_additional.
  */
 function hook_userpoints_settings() {
-  drupal_add_js(drupal_get_path('module', 'userpoints_nc') . '/userpoints_nc.js');
+  backdrop_add_js(backdrop_get_path('module', 'userpoints_nc') . '/userpoints_nc.js');
 
   $form['userpoints_nc'] = array(
     '#type'        => 'fieldset',

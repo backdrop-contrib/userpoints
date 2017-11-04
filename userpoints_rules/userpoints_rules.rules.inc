@@ -39,7 +39,7 @@ function userpoints_rules_rules_action_info() {
           'type' => 'entity',
           'description' => t('The entity to which this transaction refers.'),
           'optional' => TRUE,
-         ),
+        ),
         'description' => array(
           'label' => t('Description'),
           'type' => 'text',
@@ -139,14 +139,14 @@ function userpoints_rules_moderate() {
 function userpoints_rules_rules_event_info() {
   return array(
     'userpoints_event_points_awarded_before' => array(
-       'label' => t('User will be awarded !points', userpoints_translation()),
-       'variables' => array(
-          'userpoints_transaction' => array(
-            'type' => 'userpoints_transaction',
-            'label' => t('!Points transaction', userpoints_translation()),
-          )
+      'label' => t('User will be awarded !points', userpoints_translation()),
+      'variables' => array(
+        'userpoints_transaction' => array(
+          'type' => 'userpoints_transaction',
+          'label' => t('!Points transaction', userpoints_translation()),
         ),
-       'group' => t('!Points', userpoints_translation()),
+      ),
+      'group' => t('!Points', userpoints_translation()),
     ),
   );
 }

@@ -14,7 +14,10 @@ class userpoints_views_handler_field_category extends views_handler_field {
   function init(&$view, &$options) {
     parent::init($view, $options);
 
-    $this->additional_fields['name'] = array('table' => 'taxonomy_term_data', 'field' => 'name');
+    $this->additional_fields['name'] = array(
+      'table' => 'taxonomy_term_data',
+      'field' => 'name',
+    );
   }
 
   /**

@@ -1,36 +1,36 @@
 (function ($) {
-  Drupal.behaviors.userpointsAdminFieldsetSummaries = {
+  Backdrop.behaviors.userpointsAdminFieldsetSummaries = {
     attach: function (context) {
       // Moderation status.
-      $('fieldset#edit-status', context).drupalSetSummary(function (context) {
+      $('fieldset#edit-status', context).backdropSetSummary(function (context) {
         if ($('#edit-userpoints-points-moderation-0').is(':checked')) {
-          return Drupal.t('Approved by default.');
+          return Backdrop.t('Approved by default.');
         }
         else {
-          return Drupal.t('Moderated by default.');
+          return Backdrop.t('Moderated by default.');
         }
       });
 
       // Message.
-      $('fieldset#edit-misc', context).drupalSetSummary(function (context) {
+      $('fieldset#edit-misc', context).backdropSetSummary(function (context) {
         if ($('#edit-userpoints-display-message-0').is(':checked')) {
-          return Drupal.t('No message is displayed by default.');
+          return Backdrop.t('No message is displayed by default.');
         }
         else {
-          return Drupal.t('Message is displayed by default.');
+          return Backdrop.t('Message is displayed by default.');
         }
       });
 
       // Listings.
-      $('fieldset#edit-reports', context).drupalSetSummary(function (context) {
+      $('fieldset#edit-reports', context).backdropSetSummary(function (context) {
         var limit = $('select#edit-userpoints-report-limit :selected').val();
         var usercount = $('select#edit-userpoints-report-usercount :selected').val();
 
-        return Drupal.t('%limit transactions, %usercount users per page.', {'%limit' : limit, '%usercount' : usercount});
+        return Backdrop.t('%limit transactions, %usercount users per page.', {'%limit' : limit, '%usercount' : usercount});
       });
 
       // Listings.
-      $('fieldset#edit-renaming', context).drupalSetSummary(function (context) {
+      $('fieldset#edit-renaming', context).backdropSetSummary(function (context) {
         var branding = {
         '@ucpoints' : $('#edit-userpoints-trans-ucpoints').val(),
         '@lcpoints' : $('#edit-userpoints-trans-lcpoints').val(),
@@ -38,11 +38,11 @@
         '@lcpoint' : $('#edit-userpoints-trans-lcpoint').val()
         }
 
-        return Drupal.t('@ucpoints, @lcpoints, @ucpoint, @lcpoint.', branding);
+        return Backdrop.t('@ucpoints, @lcpoints, @ucpoint, @lcpoint.', branding);
       });
 
       // Category.
-      $('fieldset#edit-category', context).drupalSetSummary(function (context) {
+      $('fieldset#edit-category', context).backdropSetSummary(function (context) {
         var category = $('select#edit-userpoints-category-default-tid :selected').text();
         var display_selection = $('div.form-item-userpoints-category-profile-display-tid input:checked').siblings('label');
         var display_categories;
@@ -57,24 +57,24 @@
             }
         }
         else {
-            display_categories = Drupal.t('none');
+            display_categories = Backdrop.t('none');
         }
 
-        return Drupal.t('Default: %category<br />Displayed: %display_categories', {'%category' : category, '%display_categories' : display_categories});
+        return Backdrop.t('Default: %category<br />Displayed: %display_categories', {'%category' : category, '%display_categories' : display_categories});
       });
 
       // Stamping.
-      $('fieldset#edit-stamping', context).drupalSetSummary(function (context) {
+      $('fieldset#edit-stamping', context).backdropSetSummary(function (context) {
         if ($('input#edit-userpoints-transaction-timestamp').is(':checked')) {
-          return Drupal.t('Always use system time for transactions.');
+          return Backdrop.t('Always use system time for transactions.');
         }
         else {
-          return Drupal.t('Allow customization of transaction time.');
+          return Backdrop.t('Allow customization of transaction time.');
         }
       });
 
       // Expiration.
-      $('fieldset#edit-points-expiration', context).drupalSetSummary(function (context) {
+      $('fieldset#edit-points-expiration', context).backdropSetSummary(function (context) {
 
         var year = $('select#edit-userpoints-expireon-date-year :selected').val();
         var month = $('select#edit-userpoints-expireon-date-month :selected').val();
@@ -83,13 +83,13 @@
 
         // If expiration time is in the future, use that.
         if (date.getTime() > new Date().getTime()) {
-          return Drupal.t('Expiration at %date.', {'%date' : date.toLocaleDateString()});
+          return Backdrop.t('Expiration at %date.', {'%date' : date.toLocaleDateString()});
         }
         else if ($('select#edit-userpoints-expireafter-date :selected').val() > 0) {
-          return Drupal.t('Expiration in %date.', {'%date' : $('select#edit-userpoints-expireafter-date :selected').text()});
+          return Backdrop.t('Expiration in %date.', {'%date' : $('select#edit-userpoints-expireafter-date :selected').text()});
         }
         else {
-          return Drupal.t('No expiration.');
+          return Backdrop.t('No expiration.');
         }
       });
     }
