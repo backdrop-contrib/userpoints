@@ -266,8 +266,6 @@ function userpoints_install() {
 
   try {
     $bundle = new UserpointsTransactionType($bundle_info);
-    backdrop_static_reset('entity_info');
-    cache('entity_info')->flush();
     $bundle->save();
     config_set('userpoints.settings', 'userpoints_default_bundle', 'userpoints');
   }

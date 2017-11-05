@@ -1164,7 +1164,7 @@ class UserpointsTransaction extends Entity {
    * Implements EntityInterface::id().
    */
   public function id() {
-    return $this->entity_id;
+    return $this->txn_id;
   }
 
   /**
@@ -1482,6 +1482,13 @@ class UserpointsTransactionMetadataController {//extends EntityDefaultMetadataCo
 class UserpointsTransactionType extends Entity {
 
   /**
+   * Id of the transaction type.
+   *
+   * @var string
+   */
+  public $id;
+
+  /**
    * Label of the transaction type.
    *
    * @var string
@@ -1499,10 +1506,54 @@ class UserpointsTransactionType extends Entity {
     parent::__construct($values);
   }
   /**
+   * Implements EntityStorageControllerInterface::save().
+   * Todo: this is because calling save() in the install file leads to an
+   * exception; seemingly because entity_get_info() fails for this entity for
+   * some reason. Either need to make that save() work, or polish this more.
+   */
+  public function save() {
+    $transaction = db_transaction();
+    try {
+      if (!$this->isNew() && !isset($this->original)) {
+        //$this->original = entity_load_unchanged($this->entityType(), $this->id());
+      }
+
+      // $this->preSave($entity);
+      // $this->invokeHook('presave', $entity);
+
+      if (!$this->isNew()) {
+        $return = backdrop_write_record('userpoints_txn_type', $this, $this->id());
+        // $this->resetCache(array($this->id()));
+        // $this->postSave($entity, TRUE);
+        // $this->invokeHook('update', $entity);
+      }
+      else {
+        $return = backdrop_write_record('userpoints_txn_type', $this);
+        // Reset general caches, but keep caches specific to certain entities.
+        // $this->resetCache(array());
+        // $this->postSave($entity, FALSE);
+        // $this->invokeHook('insert', $entity);
+      }
+
+      // Ignore slave server temporarily.
+      db_ignore_slave();
+      //unset($this->is_new);
+      //unset($this->original);
+
+      return $return;
+    }
+    catch (Exception $e) {
+      $transaction->rollback();
+      watchdog_exception($this->entityType(), $e);
+      throw new EntityStorageException($e->getMessage(), (int) $e->getCode(), $e);
+    }
+  }
+
+  /**
    * Implements EntityInterface::id().
    */
   public function id() {
-    return $this->name;
+    return $this->id;
   }
 
   /**
@@ -1602,7 +1653,9 @@ class UserpointsTransactionTypeUIController extends EntityDefaultUIController {
         ));
     }
     // In case this is a bundle, we add links to the field ui tabs.
-    $field_ui = !empty($this->entityInfo['bundle of']) && entity_type_is_fieldable($this->entityInfo['bundle of']) && module_exists('field_ui');
+    $info = entity_get_info($this->entityInfo['bundle of']);
+    $fieldable = !empty($info ['fieldable']);
+    $field_ui = !empty($this->entityInfo['bundle of']) && $fieldable && module_exists('field_ui');
     // For exportable entities we add an export link.
     $exportable = !empty($this->entityInfo['exportable']);
     // If i18n integration is enabled, add a link to the translate tab.

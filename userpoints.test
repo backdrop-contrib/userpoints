@@ -102,7 +102,7 @@ class UserpointsAPITestCase extends UserpointsBaseTestCase {
    * Install userpoints module and create users.
    */
   function setUp() {
-    parent::setUp('userpoints');
+    parent::setUp('userpoints', 'entity_ui');
 
     // Create an administrator account.
     $this->admin_user = $this->backdropCreateUser(array('administer userpoints'));
@@ -483,7 +483,7 @@ class UserpointsAdminTestCase extends UserpointsBaseTestCase {
    * Install userpoints module and create users.
    */
   function setUp() {
-    parent::setUp('userpoints');
+    parent::setUp('userpoints', 'entity_ui');
 
     // Create an administrator account and log in with that.
     $this->admin_user = $this->backdropCreateUser(array('administer userpoints'));
@@ -582,7 +582,7 @@ class UserpointsGrantPointsTestCase extends UserpointsBaseTestCase {
    * Install userpoints module and create users.
    */
   function setUp() {
-    parent::setUp('userpoints');
+    parent::setUp('userpoints', 'entity_ui');
 
     // Create an administrator account.
     $this->admin_user = $this->backdropCreateUser(array('administer userpoints'));
@@ -672,7 +672,7 @@ class UserpointsFieldsTestCase extends UserpointsBaseTestCase {
    * Implements setUp().
    */
   function setUp() {
-    parent::setUp('userpoints');
+    parent::setUp('userpoints', 'entity_ui');
   }
 
   function testSingleField() {
@@ -705,97 +705,4 @@ class UserpointsFieldsTestCase extends UserpointsBaseTestCase {
 
     $this->assertText($message['field_' . $name . '[' . LANGUAGE_NONE . '][0][value]'], t('Content of new field is displayed.'));
   }
-}
-
-/**
- * Tests for update 7200: bundles.
- */
-class UserpointsUpdate7200TestCase extends UpdatePathTestCase {
-  /**
-   * Implements getInfo().
-   */
-  public static function getInfo() {
-    return array(
-      'name' => 'Userpoints update 7200',
-      'description' => 'Assert that database update 7200 works',
-      'group' => 'Userpoints',
-    );
-  }
-
-  /**
-   * Implements setUp().
-   */
-  public function setUp() {
-
-    $this->databaseDumpFiles = array(
-      backdrop_get_path('module', 'simpletest') . '/tests/upgrade/backdrop-7.bare.standard_all.database.php.gz',
-      backdrop_get_path('module', 'userpoints') . '/tests/userpoints.filled.database.php',
-    );
-
-    parent::setUp();
-
-    // Shamelessly taken from botcha module.
-    spl_autoload_register('backdrop_autoload_class');
-    spl_autoload_register('backdrop_autoload_interface');
-    registry_rebuild();
-  }
-
-  /**
-   * Assert successful update.
-   */
-  public function testUpdate() {
-    $update = $this->performUpgrade();
-
-    $this->assertTrue($update);
-
-    $this->backdropGet('admin/config/people/userpoints/types');
-    $this->assertRaw(t('Default'));
-  }
-
-}
-
-/**
- * Tests for update 7200: bundles. Alternate.
- */
-class UserpointsUpdate7200AlternateTestCase extends UpdatePathTestCase {
-  /**
-   * Implements getInfo().
-   */
-  public static function getInfo() {
-    return array(
-      'name' => 'Userpoints update 7200 (alternate)',
-      'description' => 'Assert that database update 7200 works. This uses a different database dump.',
-      'group' => 'Userpoints',
-    );
-  }
-
-  /**
-   * Implements setUp().
-   */
-  public function setUp() {
-
-    $this->databaseDumpFiles = array(
-      backdrop_get_path('module', 'userpoints') . '/tests/userpoints.filled.database.all.php.gz',
-    );
-
-    parent::setUp();
-
-    // Shamelessly taken from botcha module.
-    spl_autoload_register('backdrop_autoload_class');
-    spl_autoload_register('backdrop_autoload_interface');
-    registry_rebuild();
-  }
-
-  /**
-   * Assert successful update.
-   */
-  public function testUpdate() {
-    $update = $this->performUpgrade();
-
-    $this->assertTrue($update);
-
-    $this->backdropGet('admin/config/people/userpoints/types');
-    $this->assertRaw(t('Default'));
-  }
-
 }
