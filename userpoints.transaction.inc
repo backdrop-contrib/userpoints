@@ -1185,9 +1185,7 @@ class UserpointsTransaction extends Entity {
    * Implements EntityInterface::uri().
    */
   public function uri() {
-    return array(
-      'path' => '',
-    );
+    return $this->defaultUri();
   }
 }
 
@@ -1575,7 +1573,8 @@ class UserpointsTransactionType extends Entity {
    */
   public function uri() {
     return array(
-      'path' => '',
+      'path' => 'userpoints_transaction_type/' . $this->id,
+      'options' => array(),
     );
   }
 }
@@ -1648,7 +1647,7 @@ class UserpointsTransactionTypeUIController extends EntityDefaultUIController {
     // Add a row for the exportable status.
     if (!empty($this->entityInfo['exportable'])) {
       $row[] = array('data' => array(
-          '#theme' => 'entity_status',
+          '#theme' => 'entity_ui_entity_status',
           '#status' => $entity->{$this->statusKey},
         ));
     }
@@ -1662,39 +1661,68 @@ class UserpointsTransactionTypeUIController extends EntityDefaultUIController {
     $i18n = !empty($this->entityInfo['i18n controller class']);
 
     // Add operations depending on the status.
+    $links = array();
+
     if (entity_ui_entity_has_status($this->entityType, $entity, ENTITY_FIXED)) {
-      $row[] = array(
-        'data' => l(t('clone'), $this->path . '/' . $id . '/clone'),
-        'colspan' => $this->operationCount(),
+      $links['clone'] = array(
+        'title' => t('Clone'),
+        'href' => $this->path . '/' . $id . '/clone',
       );
     }
     else {
-      $row[] = l(t('edit'), $this->path . '/' . $id);
+      $links['edit'] = array(
+        'title' => t('edit'),
+        'href' => $this->path . '/' . $id,
+      );
 
       if ($field_ui) {
-        $row[] = l(t('manage fields'), $this->path . '/' . $id . '/fields');
-        $row[] = l(t('manage display'), $this->path . '/' . $id . '/display');
+        $links['manage fields'] = array(
+        'title' => t('manage fields'),
+        'href' => $this->path . '/' . $id . '/fields',
+        );
+        $links['manage display'] = array(
+        'title' => t('manage display'),
+        'href' => $this->path . '/' . $id . '/display',
+        );
       }
       if ($i18n) {
-        $row[] = l(t('translate'), $this->path . '/' . $id . '/translate');
+        $links['translate'] = array(
+        'title' => t('translate'),
+        'href' => $this->path . '/' . $id . '/translate',
+        );
       }
       if ($exportable) {
-        $row[] = l(t('clone'), $this->path . '/' . $id . '/clone');
+        $links['clone'] = array(
+        'title' => t('clone'),
+        'href' => $this->path . '/' . $id . '/clone',
+        );
       }
 
       if (empty($this->entityInfo['exportable']) || !entity_ui_entity_has_status($this->entityType, $entity, ENTITY_IN_CODE)) {
-        $row[] = l(t('delete'), $this->path . '/' . $id . '/delete', array('query' => backdrop_get_destination()));
+        $links['delete'] = array(
+        'title' => t('delete'),
+        'href' => $this->path . '/' . $id . '/delete', array('query' => backdrop_get_destination()),
+        );
       }
       elseif (entity_ui_entity_has_status($this->entityType, $entity, ENTITY_OVERRIDDEN)) {
-        $row[] = l(t('revert'), $this->path . '/' . $id . '/revert', array('query' => backdrop_get_destination()));
-      }
-      else {
-        $row[] = '';
+        $links['revert'] = array(
+        'title' => t('revert'),
+        'href' => $this->path . '/' . $id . '/revert', array('query' => backdrop_get_destination()),
+        );
       }
     }
     if ($exportable) {
-      $row[] = l(t('export'), $this->path . '/' . $id . '/export');
+      $links['export'] = array(
+        'title' => t('export'),
+        'href' => $this->path . '/' . $id . '/export',
+      );
     }
+    $operations = array(
+      '#type' => 'dropbutton',
+      '#links' => $links,
+    );
+    $row[] = backdrop_render($operations);
+
     return $row;
   }
 

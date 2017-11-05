@@ -677,7 +677,7 @@ class UserpointsFieldsTestCase extends UserpointsBaseTestCase {
 
   function testSingleField() {
     // Create an administrator account.
-    $admin = $this->backdropCreateUser(array('administer userpoints'));
+    $admin = $this->backdropCreateUser(array('administer userpoints', 'administer fields'));
     $this->backdropLogin($admin);
 
     // Create a new field.
