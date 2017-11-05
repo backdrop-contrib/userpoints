@@ -1265,7 +1265,7 @@ function userpoints_get_categories($account = NULL) {
         if ($account) {
           $query = db_select('taxonomy_term_data', 't')
             ->fields('t', array('tid', 'name'))
-            ->condition('t.vid', userpoints_get_vid())
+            ->condition('t.vocabulary', userpoints_get_vid())
             ->groupBy('t.tid')
             ->groupBy('t.name')
             ->groupBy('t.weight')

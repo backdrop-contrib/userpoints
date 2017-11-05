@@ -297,11 +297,11 @@ class UserpointsAPITestCase extends UserpointsBaseTestCase {
     $desc = $this->randomName(10);
 
     // create a new term.
-    $term = (object) array(
-        'name' => $term_name,
-        'description' => $desc,
-        'vid' => $vid
-    );
+    $term = entity_create('taxonomy_term', array(
+      'name' => $term_name,
+      'description' => $desc,
+      'vid' => $vid
+    ));
     taxonomy_term_save($term);
 
     // login as admin userpoints
