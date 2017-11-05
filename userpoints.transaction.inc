@@ -1505,38 +1505,36 @@ class UserpointsTransactionType extends Entity {
   }
   /**
    * Implements EntityStorageControllerInterface::save().
-   * Todo: this is because calling save() in the install file leads to an
+   *
+   * This is because calling save() in the install file leads to an
    * exception; seemingly because entity_get_info() fails for this entity for
-   * some reason. Either need to make that save() work, or polish this more.
+   * some reason..
    */
   public function save() {
     $transaction = db_transaction();
     try {
       if (!$this->isNew() && !isset($this->original)) {
-        //$this->original = entity_load_unchanged($this->entityType(), $this->id());
+        $this->original = entity_load_unchanged($this->entityType(), $this->id());
       }
 
-      // $this->preSave($entity);
-      // $this->invokeHook('presave', $entity);
+      module_invoke_all('userpoints_transaction_type_presave', $this);
+      module_invoke_all('entity_presave', $this, 'userpoints_transaction_type');
 
       if (!$this->isNew()) {
         $return = backdrop_write_record('userpoints_txn_type', $this, $this->id());
-        // $this->resetCache(array($this->id()));
-        // $this->postSave($entity, TRUE);
-        // $this->invokeHook('update', $entity);
+        module_invoke_all('userpoints_transaction_type_update', $this);
+        module_invoke_all('entity_update', $this, 'userpoints_transaction_type');
       }
       else {
         $return = backdrop_write_record('userpoints_txn_type', $this);
-        // Reset general caches, but keep caches specific to certain entities.
-        // $this->resetCache(array());
-        // $this->postSave($entity, FALSE);
-        // $this->invokeHook('insert', $entity);
+        module_invoke_all('userpoints_transaction_type_insert', $this);
+        module_invoke_all('entity_insert', $this, 'userpoints_transaction_type');
       }
 
       // Ignore slave server temporarily.
       db_ignore_slave();
-      //unset($this->is_new);
-      //unset($this->original);
+      unset($this->is_new);
+      unset($this->original);
 
       return $return;
     }
