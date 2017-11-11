@@ -34,7 +34,6 @@ function userpoints_list_transactions($form, &$form_state, $account = NULL, $tid
   );
   $header = userpoints_get_transaction_header($settings);
 
-  // TODO This variable was probably removed in Backdrop without replacement.
   $query = db_select('userpoints_txn', 'p')->extend('PagerDefault')->extend('TableSort')
     ->fields('p', array('txn_id'))
     ->condition('p.uid', $account->uid)
@@ -183,7 +182,6 @@ function userpoints_list_users($form, &$form_state, $tid = NULL) {
     backdrop_set_title(t('All points'));
   }
 
-  // TODO This variable was probably removed in Backdrop without replacement.
   if ($config->get(USERPOINTS_REPORT_DISPLAYZERO) == 0) {
     // The user would NOT like to see users with zero points.
     $query->condition('p.points', 0, '<>');

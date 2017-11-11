@@ -34,11 +34,6 @@ function userpoints_translation() {
 
   $config = config('userpoints.settings');
   if (!isset($trans)) {
-    // TODO This variable was probably removed in Backdrop without replacement.
-    // TODO This variable was probably removed in Backdrop without replacement.
-    // TODO This variable was probably removed in Backdrop without replacement.
-    // TODO This variable was probably removed in Backdrop without replacement.
-    // TODO This variable was probably removed in Backdrop without replacement.
     $trans = array(
       '!Points' => check_plain($config->get(USERPOINTS_TRANS_UCPOINTS)),
       '!points' => check_plain($config->get(USERPOINTS_TRANS_LCPOINTS)),
@@ -767,10 +762,8 @@ function userpoints_grant_points($operation, $points, $type = NULL, $uid = NULL)
  */
 function userpoints_get_default_expiry_date() {
   $config = config('userpoints.settings');
-  // TODO This variable was probably removed in Backdrop without replacement.
   $expirydate = userpoints_date_to_timestamp($config->get(USERPOINTS_EXPIREON_DATE));
   if ($expirydate < REQUEST_TIME) {
-    // TODO This variable was probably removed in Backdrop without replacement.
     $expirydate = $config->get(USERPOINTS_EXPIREAFTER_DATE);
     if ($expirydate) {
       $expirydate = REQUEST_TIME + $expirydate;
@@ -877,7 +870,6 @@ function userpoints_get_points_list($account = NULL) {
   // 0 can not be used as a checkbox value.
   $categories = array('uncategorized' => $categories[0]) + $categories + array('all' => t('Total !points in all categories', userpoints_translation()));
   unset($categories[0]);
-  // TODO This variable was probably removed in Backdrop without replacement.
   $tids = array_filter(config_get('userpoints.settings', USERPOINTS_CATEGORY_PROFILE_DISPLAY_TID));
   if (!empty($tids)) {
     $points_list = array();
@@ -1178,7 +1170,6 @@ function userpoints_expire_transactions() {
       '!txn_id' => $transaction->txn_id,
       '!date' => $time_stamp_formatted,
     ));
-    // TODO This variable was probably removed in Backdrop without replacement.
     $description = strtr(config_get('userpoints.settings', USERPOINTS_EXPIRY_DESCRIPTION), $arguments);
 
     userpoints_grant_points('expiry', -$transaction->points, $transaction->type, $transaction->uid)
@@ -1290,7 +1281,6 @@ function userpoints_get_categories($account = NULL) {
  * Wrapper function to return the default tid via API call
  */
 function userpoints_get_default_tid() {
-  // TODO This variable was probably removed in Backdrop without replacement.
   return (int) config_get('userpoints.settings', USERPOINTS_CATEGORY_DEFAULT_TID);
 }
 
@@ -1506,8 +1496,7 @@ function userpoints_get_list_header() {
 }
 
 /**
- * @todo Please document this function.
- * @see http://drupal.org/node/1354
+ * Utility function.
  */
 function userpoints_get_list_row($data) {
   global $user;

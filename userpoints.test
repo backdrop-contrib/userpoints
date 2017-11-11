@@ -87,18 +87,6 @@ class UserpointsAPITestCase extends UserpointsBaseTestCase {
   private $non_admin_user;
 
   /**
-   * Implements getInfo().
-   */
-  static public function getInfo() {
-    return array(
-        'name' => t('Userpoints API'),
-        'description' => t('Tests the core API for proper inserts & updates to the database tables,
-			  moderation, expiration, as well as permission checks'),
-        'group' => t('Userpoints'),
-    );
-  }
-
-  /**
    * Install userpoints module and create users.
    */
   function setUp() {
@@ -469,17 +457,6 @@ class UserpointsAdminTestCase extends UserpointsBaseTestCase {
   private $non_admin_user;
 
   /**
-   * Implements getInfo().
-   */
-  static public function getInfo() {
-    return array(
-        'name' => t('Userpoints Admin'),
-        'description' => t('Test various userpoints administration forms and listings.'),
-        'group' => t('Userpoints'),
-    );
-  }
-
-  /**
    * Install userpoints module and create users.
    */
   function setUp() {
@@ -568,17 +545,6 @@ class UserpointsGrantPointsTestCase extends UserpointsBaseTestCase {
   private $non_admin_user;
 
   /**
-   * Implements getInfo().
-   */
-  static public function getInfo() {
-    return array(
-      'name' => t('Userpoints grant points'),
-      'description' => t('Tests the core API for proper inserts & updates to the database tables.'),
-      'group' => t('Userpoints'),
-    );
-  }
-
-  /**
    * Install userpoints module and create users.
    */
   function setUp() {
@@ -657,16 +623,6 @@ class UserpointsGrantPointsTestCase extends UserpointsBaseTestCase {
  * Tests for fields integration.
  */
 class UserpointsFieldsTestCase extends UserpointsBaseTestCase {
-  /**
-   * Implements getInfo().
-   */
-  public static function getInfo() {
-    return array(
-      'name' => t('Userpoints fields.'),
-      'description' => t('Tests integration with fields.'),
-      'group' => t('Userpoints'),
-    );
-  }
 
   /**
    * Implements setUp().

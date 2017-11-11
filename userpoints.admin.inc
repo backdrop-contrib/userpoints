@@ -6,8 +6,7 @@
  */
 
 /**
- * @todo Please document this function.
- * @see http://drupal.org/node/1354
+ * Submit handler.
  */
 function userpoints_confirm_approve_submit($form, &$form_state) {
   global $user;
@@ -154,7 +153,6 @@ function userpoints_admin_txn($form, &$form_state, $mode, $txn = NULL) {
   );
 
   if ($mode == 'add') {
-    // TODO This variable was probably removed in Backdrop without replacement.
     $form['status']['moderate'] = array(
       '#title' => t('Moderated'),
       '#type' => 'checkbox',
@@ -178,7 +176,6 @@ function userpoints_admin_txn($form, &$form_state, $mode, $txn = NULL) {
     );
   }
 
-  // TODO This variable was probably removed in Backdrop without replacement.
   $form['status']['time_stamp'] = array(
     '#type' => 'textfield',
     '#title' => t('Date/Time'),
@@ -513,7 +510,6 @@ function userpoints_admin_points($form, &$form_state) {
   }
 
   $header = userpoints_get_list_header();
-  // TODO This variable was probably removed in Backdrop without replacement.
   $query = db_select('userpoints', 'p')->extend('PagerDefault')->extend('TableSort')
     ->fields('p', array('uid', 'points', 'tid'))
     ->fields('u', array('name'))
@@ -540,7 +536,6 @@ function userpoints_admin_points($form, &$form_state) {
     backdrop_set_title(t('Totals'));
   }
 
-  // TODO This variable was probably removed in Backdrop without replacement.
   if ($config->get(USERPOINTS_REPORT_DISPLAYZERO) == 0) {
     // The user would NOT like to see users with zero points.
     $query->condition('p.points', 0, '<>');
@@ -585,7 +580,6 @@ function userpoints_admin_transactions($form, &$form_state, $moderate) {
     'show_status' => !$moderate,
   );
   $header = userpoints_get_transaction_header($settings);
-  // TODO This variable was probably removed in Backdrop without replacement.
   $query = db_select('userpoints_txn', 'p')->extend('PagerDefault')->extend('TableSort')
     ->fields('p')
     ->orderByHeader($header)
@@ -660,8 +654,7 @@ function userpoints_admin_transactions($form, &$form_state, $moderate) {
 }
 
 /**
- * @todo Please document this function.
- * @see http://drupal.org/node/1354
+ * Utility function.
  */
 function userpoints_confirm_approve($form, $form_state, $operation, $transaction) {
   $form = array(
@@ -721,7 +714,6 @@ function userpoints_admin_settings($form, &$form_state) {
     '#group' => 'settings',
   );
 
-  // TODO This variable was probably removed in Backdrop without replacement.
   $form[$group][USERPOINTS_TRANS_UCPOINTS] = array(
     '#type' => 'textfield',
     '#title' => t('Word to use in the interface for the upper case plural word !Points', userpoints_translation()),
@@ -730,7 +722,6 @@ function userpoints_admin_settings($form, &$form_state) {
     '#maxlength' => 20,
   );
 
-  // TODO This variable was probably removed in Backdrop without replacement.
   $form[$group][USERPOINTS_TRANS_LCPOINTS] = array(
     '#type' => 'textfield',
     '#title' => t('Word to use in the interface for the lower case plural word !points', userpoints_translation()),
@@ -738,7 +729,6 @@ function userpoints_admin_settings($form, &$form_state) {
     '#size' => 20,
     '#maxlength' => 20,
   );
-  // TODO This variable was probably removed in Backdrop without replacement.
   $form[$group][USERPOINTS_TRANS_UCPOINT] = array(
     '#type' => 'textfield',
     '#title' => t('Word to use in the interface for the upper case singular word !Point', userpoints_translation()),
@@ -746,7 +736,6 @@ function userpoints_admin_settings($form, &$form_state) {
     '#size' => 20,
     '#maxlength' => 20,
   );
-  // TODO This variable was probably removed in Backdrop without replacement.
   $form[$group][USERPOINTS_TRANS_LCPOINT] = array(
     '#type' => 'textfield',
     '#title' => t('Word to use in the interface for the lower case singular word !point', userpoints_translation()),
@@ -765,7 +754,6 @@ function userpoints_admin_settings($form, &$form_state) {
     '#group' => 'settings',
   );
 
-  // TODO This variable was probably removed in Backdrop without replacement.
   $form[$group][USERPOINTS_POINTS_MODERATION] = array(
     '#type' => 'radios',
     '#title' => t('Transaction status'),
@@ -784,7 +772,6 @@ function userpoints_admin_settings($form, &$form_state) {
     '#group' => 'settings',
   );
 
-  // TODO This variable was probably removed in Backdrop without replacement.
   $form[$group][USERPOINTS_EXPIREAFTER_DATE] = array(
     '#type' => 'select',
     '#title' => t('Expire !points after', userpoints_translation()),
@@ -798,12 +785,10 @@ function userpoints_admin_settings($form, &$form_state) {
   // Although this may be desirable/ it could also be an oversight so we'll
   // display a message to the administrator.
   $warning = "";
-  // TODO This variable was probably removed in Backdrop without replacement.
   if (userpoints_date_to_timestamp($config->get(USERPOINTS_EXPIREON_DATE)) < REQUEST_TIME) {
     $warning = '<br /><strong>' . t('This setting will not take affect, date must be in the future') . '</strong>';
   }
 
-  // TODO This variable was probably removed in Backdrop without replacement.
   $form[$group][USERPOINTS_EXPIREON_DATE] = array(
     '#type' => 'date',
     '#title' => t('Expire !points on this date', userpoints_translation()),
@@ -812,7 +797,6 @@ function userpoints_admin_settings($form, &$form_state) {
                          "Expire after setting" above ', userpoints_translation()) . $warning,
     '#default_value' => $config->get(USERPOINTS_EXPIREON_DATE),
   );
-  // TODO This variable was probably removed in Backdrop without replacement.
   $form[$group][USERPOINTS_EXPIRY_DESCRIPTION] = array(
     '#type' => 'textarea',
     '#title' => t('Expiration entry description'),
@@ -838,7 +822,6 @@ function userpoints_admin_settings($form, &$form_state) {
     '#group' => 'settings',
   );
 
-  // TODO This variable was probably removed in Backdrop without replacement.
   $form[$group][USERPOINTS_DISPLAY_MESSAGE] = array(
     '#type' => 'radios',
     '#title' => t('Display message'),
@@ -858,7 +841,6 @@ function userpoints_admin_settings($form, &$form_state) {
     '#group' => 'settings',
   );
 
-  // TODO This variable was probably removed in Backdrop without replacement.
   $form[$group][USERPOINTS_REPORT_LIMIT] = array(
     '#type' => 'select',
     '#title' => t('Transactions per page'),
@@ -873,7 +855,6 @@ function userpoints_admin_settings($form, &$form_state) {
     ),
     '#description' => t('Limits the number of transactions displayed per page.'),
   );
-  // TODO This variable was probably removed in Backdrop without replacement.
   $form[$group][USERPOINTS_REPORT_DISPLAYZERO] = array(
     '#type' => 'radios',
     '#title' => t('Display zero !point users?', userpoints_translation()),
@@ -881,7 +862,6 @@ function userpoints_admin_settings($form, &$form_state) {
     '#options' => array(t('No'), t('Yes')),
     '#description' => t('If set to "No" users with zero !points will not be displayed in the reports', userpoints_translation()),
   );
-  // TODO This variable was probably removed in Backdrop without replacement.
   $form[$group][USERPOINTS_REPORT_USERCOUNT] = array(
     '#type' => 'select',
     '#title' => t('Users per page'),
@@ -918,8 +898,6 @@ function userpoints_admin_settings($form, &$form_state) {
       '#title' => t('Categorization', userpoints_translation()),
       '#group' => 'settings',
     );
-    // TODO This variable was probably removed in Backdrop without replacement.
-    // TODO This variable was probably removed in Backdrop without replacement.
     $form[$group][USERPOINTS_CATEGORY_DEFAULT_TID] = array(
       '#type' => 'select',
       '#title' => t('Default Category'),
@@ -932,7 +910,6 @@ function userpoints_admin_settings($form, &$form_state) {
     // 0 can not be used as a checkbox value.
     $options = array('uncategorized' => $options[0]) + $options + array('all' => t('Total !points in all categories', userpoints_translation()));
     unset($options[0]);
-    // TODO This variable was probably removed in Backdrop without replacement.
     $form[$group][USERPOINTS_CATEGORY_PROFILE_DISPLAY_TID] = array(
       '#type' => 'checkboxes',
       '#title' => t("Categories to display on the user profile page and in the User's !points block", userpoints_translation()),
@@ -941,7 +918,6 @@ function userpoints_admin_settings($form, &$form_state) {
       '#description' => t('Select the !points categories that should be displayed. Check "Total !points in all categories" to display a sum total of all individual !points categories.', userpoints_translation()),
     );
 
-    // TODO This variable was probably removed in Backdrop without replacement.
     $form[$group][USERPOINTS_TRANS_UNCAT] = array(
       '#type' => 'textfield',
       '#title' => t('Word to use for the general category'),
@@ -960,7 +936,6 @@ function userpoints_admin_settings($form, &$form_state) {
     '#title' => t('Transaction stamping'),
     '#group' => 'settings',
   );
-  // TODO This variable was probably removed in Backdrop without replacement.
   $form[$group][USERPOINTS_TRANSACTION_TIMESTAMP] = array(
     '#type' => 'checkbox',
     '#title' => t('Always use system time'),
