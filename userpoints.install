@@ -318,27 +318,44 @@ function userpoints_uninstall() {
  * Implements hook_update_last_removed().
  */
 function userpoints_update_last_removed() {
-  return 7200;
+  return 7004;
 }
 
 /**
- * Implements hook_update_N().
+ * Converts Userpoints variables to configuration.
  */
 function userpoints_update_1000() {
   $config = config('userpoints .settings');
+
+  // Some variables may need specific default values if not yet set. So we save
+  // these specifically with defaults.
+  $override_these = array(
+    'userpoints_truncate',
+    'userpoints_default_bundle',
+    'userpoints_points_moderation',
+    'userpoints_transaction_timestamp',
+  );
+
+  // Set the overridden config values specifically.
   $config->set('userpoints_truncate', update_variable_get('userpoints_truncate', '30'));
   $config->set('userpoints_default_bundle', update_variable_get('userpoints_default_bundle', 'userpoints'));
   $config->set('userpoints_points_moderation', update_variable_get('userpoints_points_moderation', 'UserpointsTransaction::STATUS_APPROVED'));
   $config->set('userpoints_transaction_timestamp', update_variable_get('userpoints_transaction_timestamp', '1'));
-  update_variable_del('userpoints_truncate');
-  update_variable_del('userpoints_default_bundle');
-  update_variable_del('userpoints_points_moderation');
-  update_variable_del('userpoints_transaction_timestamp');
 
-  $terms = userpoints_get_categories();
-  foreach ($terms as $key => $value) {
-    $config->set('userpoints_block_up_records_' . $key, update_variable_get('userpoints_block_up_records_' . $key, 10));
-    update_variable_del('userpoints_block_up_records_' . $key);
+  // Convert all other variables with their current values exactly.
+  $query = "SELECT name, value FROM {variable} WHERE name LIKE 'userpoints%'";
+  $result = db_query($query)->fetchAllAssoc('name', PDO::FETCH_ASSOC);
+  foreach ($result as $variable) {
+    if (FALSE && !in_array($variable['name'], $override_these)) {
+      // Set the config value.
+      $config->set($variable['name'], unserialize($variable['value']));
+    }
+    // Clean up the old variables.
+    update_variable_del($variable['name']);
   }
+
+  // Save the new config file.
   $config->save();
+
+  return t('Userppints variables converted to configuration.');
 }
