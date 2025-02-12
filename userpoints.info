@@ -6,3 +6,4 @@ type = module
 
 configure = admin/config/people/userpoints/settings
 dependencies[] = entity_ui
+dependencies[] = entity_plus

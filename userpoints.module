@@ -1573,7 +1573,7 @@ function userpoints_entity_info() {
       'entity class' => 'UserpointsTransaction',
       'controller class' => 'UserpointsTransactionController',
       'metadata controller class' => 'UserpointsTransactionMetadataController',
-      'views controller class' => 'EntityDefaultViewsController',
+      'views controller class' => 'EntityPlusDefaultViewsController',
       'base table' => 'userpoints_txn',
       'uri callback' => 'entity_class_uri',
       'fieldable' => TRUE,

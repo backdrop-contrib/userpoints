@@ -1224,16 +1224,16 @@ class UserpointsTransactionIncompleteException extends Exception {
 /**
  * Userpoints transaction controller.
  */
-class UserpointsTransactionController extends EntityDatabaseStorageController {
+class UserpointsTransactionController extends EntityPlusController {
 
   /**
-   * Overrides EntityDatabaseStorageController::save().
+   * Overrides EntityPlusController::save().
    *
    * It is not permitted to update a approved or denied transaction except
    * marking it as expird. Any attemt to change a property of such a transaction
    * will result in an immediate exception.
    */
-  public function save(EntityInterface $entity) {
+  public function save($entity, DatabaseTransaction $transaction = NULL) {
 
     // Prevent saving when any of the required properties are missing.
     if (!$entity->getPoints() || !$entity->getUid() || !$entity->getOperation()) {
@@ -1251,7 +1251,7 @@ class UserpointsTransactionController extends EntityDatabaseStorageController {
       return FALSE;
     }
 
-    $return = parent::save($entity);
+    $return = parent::save($entity, $transaction);
 
     // Update totals if the transaction is approved and not expired.
     if ($entity->isApproved() && !$entity->isExpired()) {
@@ -1323,7 +1323,7 @@ class UserpointsTransactionController extends EntityDatabaseStorageController {
 /**
  * Extends property metadata for the Userpoints Transaction entity.
  */
-class UserpointsTransactionMetadataController {//extends EntityDefaultMetadataController {
+class UserpointsTransactionMetadataController extends EntityDefaultMetadataController {
 
   /**
    * Overrides EntityDefaultMetadataController::entityPropertyInfo().
