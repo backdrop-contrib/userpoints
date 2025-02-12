@@ -66,7 +66,8 @@ complete text.
 
 Current Maintainers
 -------------------
- - docwilmot (https://github.com/docwilmot
+ - docwilmot (https://github.com/docwilmot)
+ - [Tim Erickson](https://github.com/stpaultim)
 
 Author and credits
 -----------------
