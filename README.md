@@ -32,8 +32,6 @@ This module is useful in providing an incentive for users to participate
 in the site, and be more active. The module is easily extended through use of 
 the API (see below)
 
-Initially sponsored by: http://artalyst.com
-
 Installation
 ------------
 
@@ -52,11 +50,6 @@ To enable this module do the following:
    Configure the options as per your requirements
 
 3. Go to Admin -> User accounts -> Permissions and configure as desired.
-
-API
----
-
-The API documentation can be found at api.worldempire.ch/api/userpoints.
 
 License
 -------
