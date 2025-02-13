@@ -223,6 +223,7 @@ function userpoints_list_users($form, &$form_state, $tid = NULL) {
  */
 function userpoints_view_transaction($transaction) {
   backdrop_add_css(backdrop_get_path('module', 'userpoints') . '/userpoints.css');
+  $transaction_wrapper = entity_metadata_wrapper('userpoints_transaction', $transaction);
 
   field_attach_prepare_view('userpoints_transaction', array($transaction->getTxnId() => $transaction), 'full');
   backdrop_set_title(t('View transaction #@txn_id', array('@txn_id' => $transaction->txn_id)));
@@ -268,7 +269,7 @@ function userpoints_view_transaction($transaction) {
   $content['details']['category'] = array(
     '#theme' => 'userpoints_view_item',
     '#title' => t('Category'),
-    '#value' => $transaction->tid,
+    '#value' => $transaction->getCategory(),
     '#weight' => 20,
     '#attributes' => array('class' => array('userpoints-item-category')),
   );
