@@ -467,9 +467,8 @@ class UserpointsTransaction extends Entity {
    */
   function getEntity() {
     if (!empty($this->entity_id) && !empty($this->entity_type) && entity_get_info($this->entity_type)) {
-      // Create an array because array_shift passes in by reference.
-      $entities = entity_load($this->entity_type, $this->entity_id);
-      return array_shift($entities);
+      $entity = entity_load($this->entity_type, $this->entity_id);
+      return $entity;
     }
   }
 
@@ -1532,7 +1531,7 @@ class UserpointsTransactionType extends Entity {
       }
 
       // Ignore slave server temporarily.
-      db_ignore_slave();
+      db_ignore_replica();
       unset($this->is_new);
       unset($this->original);
 
@@ -1550,6 +1549,13 @@ class UserpointsTransactionType extends Entity {
    */
   public function id() {
     return $this->id;
+  }
+
+  /**
+   * Returns the machine name of the transaction type.
+   */
+  public function name() {
+    return $this->name;
   }
 
   /**
@@ -1571,7 +1577,7 @@ class UserpointsTransactionType extends Entity {
    */
   public function uri() {
     return array(
-      'path' => 'userpoints_transaction_type/' . $this->id,
+      'path' => 'admin/config/people/userpoints/types/' . $this->name,
       'options' => array(),
     );
   }
@@ -1604,6 +1610,9 @@ class UserpointsTransactionTypeUIController extends EntityDefaultUIController {
         $new_path = preg_replace('/\/manage/', '', $path);
         $items[$new_path] = $items[$path];
         $items[$new_path]['page arguments'][1] = 5;
+        if (isset($items[$new_path]['title arguments'])) {
+          $items[$new_path]['title arguments'][1] = 5;
+        }
 
         if (isset($items[$new_path]['page arguments'][0]) && 
             $items[$new_path]['page arguments'][0] == 'userpoints_transaction_type_operation_form') {
@@ -1631,7 +1640,7 @@ class UserpointsTransactionTypeUIController extends EntityDefaultUIController {
       'data' => array(
         '#theme' => 'entity_ui_overview_item',
         '#label' => entity_label($this->entityType, $entity),
-        '#name' => !empty($this->entityInfo['exportable']) ? $entity->id() : FALSE,
+        '#name' => !empty($this->entityInfo['exportable']) ? $entity->name() : FALSE,
         '#url' => $entity_uri ? $entity_uri : FALSE,
         '#entity_type' => $this->entityType,
       ),

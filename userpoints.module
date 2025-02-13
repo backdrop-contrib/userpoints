@@ -286,7 +286,7 @@ function userpoints_menu() {
       'file' => 'userpoints.admin.inc',
       'type' => MENU_LOCAL_TASK,
     );
-    $items['user/%user/points/%userpoints_transaction/decline'] = array(
+    $items[$local_task_prefix . '/%userpoints_transaction/decline'] = array(
       'title' => 'Decline',
       'title arguments' => userpoints_translation(),
       'page callback' => 'backdrop_get_form',
@@ -1607,7 +1607,7 @@ function userpoints_entity_info() {
       'module' => 'userpoints',
       'label' => t('Userpoints Transaction Type'),
       'entity class' => 'UserpointsTransactionType',
-      'controller class' => 'EntityDatabaseStorageController',
+      'controller class' => 'EntityPlusControllerExportable',
       'base table' => 'userpoints_txn_type',
       'entity keys' => array(
         'id' => 'id',

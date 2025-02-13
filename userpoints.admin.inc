@@ -320,6 +320,7 @@ function userpoints_admin_txn($form, &$form_state, $mode, $txn = NULL) {
       '#value' => t('Back'),
       '#submit' => array('userpoints_admin_txn_back_submit'),
       '#limit_validation_errors' => array(),
+      '#weight' => 60,
     );
   }
 
@@ -663,10 +664,9 @@ function userpoints_confirm_approve($form, $form_state, $operation, $transaction
       '#value' => $transaction->txn_id,
     ),
   );
-
   $arguments = array(
-    '!user' => theme('username', array('account' => $transaction->user)),
-    '%category' => $transaction->category,
+    '!user' => theme('username', array('account' => $transaction->getUser())),
+    '%category' => $transaction->getCategory(),
   ) + userpoints_translation();
 
   if ($operation == 'approve') {
@@ -687,7 +687,7 @@ function userpoints_confirm_approve($form, $form_state, $operation, $transaction
   }
 
   $description = '<p><strong>' . $description . '</strong></p>';
-  $description .= '<p>' . t('Reason: !reason', array('!reason' => userpoints_create_description($transaction))) . '</p>';
+  $description .= '<p>' . t('Reason: !reason', array('!reason' => $transaction->getReason())) . '</p>';
 
   return confirm_form($form, $question, 'admin/config/people/userpoints/moderate', $description);
 }
@@ -1033,7 +1033,11 @@ function userpoints_transaction_type_form_submit($form, &$form_state) {
   $type = entity_ui_form_submit_build_entity($form, $form_state);
 
   try {
-    $type->save();
+    $op = $type->save();
+    if ($op == SAVED_NEW) {
+      // Notify Field API of new bundle
+      field_attach_create_bundle('point', $type->name());
+    }
   }
   catch (Exception $e) {
     watchdog_exception('userpoints', $e);
