@@ -59,14 +59,18 @@ complete text.
 
 Current Maintainers
 -------------------
- - docwilmot (https://github.com/docwilmot)
- - [Tim Erickson](https://github.com/stpaultim)
+ - [docwilmot](https://github.com/docwilmot)
+ - [Tim Erickson](https://github.com/stpaultim) - Simplo (https://simplo.site) by Triplo (https://triplo.co)
 
 Author and credits
 -----------------
-Khalid Baheyeldin (http://baheyeldin.com/khalid and http://2bits.com)
+- Initial port to Backdrop CMS - [docwilmot](https://github.com/docwilmot)
+- Critical help fixing bugs and releasing Backdrop version of this module: [Alejandro Cremaschi](https://github.com/argiepiano)
 
-The Drupal 7 version of this module is maintained by Berdir
+----
+
+- Khalid Baheyeldin (http://baheyeldin.com/khalid and http://2bits.com)
+- The Drupal 7 version of this module was maintained by Berdir
 (http://drupal.org/user/214652).
 
 
