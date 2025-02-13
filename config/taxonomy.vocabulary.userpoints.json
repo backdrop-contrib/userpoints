@@ -1,0 +1,9 @@
+{
+    "_config_name": "taxonomy.vocabulary.userpoints",
+    "name": "Userpoints",
+    "machine_name": "userpoints",
+    "description": "Automatically created by the userpoints module",
+    "hierarchy": "1",
+    "language": 0,
+    "weight": 0
+}
