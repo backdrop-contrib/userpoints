@@ -71,16 +71,9 @@ Current Maintainers
 
 Author and credits
 -----------------
-
 Khalid Baheyeldin (http://baheyeldin.com/khalid and http://2bits.com)
 
 The Drupal 7 version of this module is maintained by Berdir
 (http://drupal.org/user/214652).
-
-If you use this module, find it useful, and want to send the author
-a thank you note, then use the Feedback/Contact page at the URL above.
-
-The author can also be contacted for paid customizations of this
-and other modules.
 
 
